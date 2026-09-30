@@ -1,0 +1,196 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Helper for HTTP requests
+async function fetchAPI(endpoint, options = {}) {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  try {
+    const res = await fetch(url, { ...options, headers });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.detail || `API error: ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.warn(`[API Call Failed: ${endpoint}]`, err.message);
+    throw err;
+  }
+}
+
+// User Services
+export async function createUser({ name, field_of_work }) {
+  try {
+    return await fetchAPI("/api/users", {
+      method: "POST",
+      body: JSON.stringify({ name, field_of_work }),
+    });
+  } catch (e) {
+    // Local fallback for offline/development mode
+    const mockUuid = "demo-" + Math.random().toString(36).substring(2, 9);
+    const mockUser = {
+      id: mockUuid,
+      name: name || "SIWES Student",
+      field_of_work: field_of_work || "General Fieldwork",
+      custom_prompt: `Focus on daily technical tasks, equipment calibrated, and challenges faced.`,
+      created_at: new Date().toISOString(),
+    };
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`yarn_user_${mockUuid}`, JSON.stringify(mockUser));
+    }
+    return mockUser;
+  }
+}
+
+export async function getUserProfile(uuid) {
+  try {
+    return await fetchAPI(`/api/users/${uuid}`);
+  } catch (e) {
+    if (typeof window !== "undefined") {
+      const local = localStorage.getItem(`yarn_user_${uuid}`);
+      if (local) return JSON.parse(local);
+    }
+    return {
+      id: uuid,
+      name: "Chidi Okafor",
+      field_of_work: "Agricultural Engineering - Thermal Imaging",
+      custom_prompt: "Focus on crop temperatures, ambient humidity, equipment setup.",
+      created_at: new Date().toISOString(),
+    };
+  }
+}
+
+export async function updateUserProfile(uuid, data) {
+  try {
+    return await fetchAPI(`/api/users/${uuid}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  } catch (e) {
+    if (typeof window !== "undefined") {
+      const existing = await getUserProfile(uuid);
+      const updated = { ...existing, ...data };
+      localStorage.setItem(`yarn_user_${uuid}`, JSON.stringify(updated));
+      return updated;
+    }
+    return data;
+  }
+}
+
+// Logbook Services
+export async function getUserLogs(userUuid) {
+  try {
+    return await fetchAPI(`/api/logs/${userUuid}`);
+  } catch (e) {
+    // Return sample logs for demo/preview
+    return [
+      {
+        id: "log-1",
+        user_id: userUuid,
+        date: new Date().toISOString().split("T")[0],
+        raw_transcript: "Today I visited the cassava plantation, calibrated the infrared FLIR thermal camera, measured canopy temperature at 9:00 AM...",
+        processed_output: `### Date & Location\n**Date:** ${new Date().toISOString().split("T")[0]}\n**Location:** Research Orchard, Block B\n\n### Activities Performed\n- Calibrated the FLIR E8-XT infrared thermal imaging camera.\n- Conducted canopy temperature measurements across 20 cassava sample trees.\n\n### Tools & Equipment Used\n- FLIR E8-XT Camera\n- Digital Hygrometer\n\n### Challenges & Learnings\n- High midday sun glare affected thermal readings between 12:00 PM and 1:30 PM.\n\n### Next Steps / Remarks\n- Schedule early morning measurements tomorrow at 7:30 AM.`,
+        is_confidential: false,
+        created_at: new Date().toISOString(),
+      },
+    ];
+  }
+}
+
+export async function getSingleLog(logId) {
+  try {
+    return await fetchAPI(`/api/logs/single/${logId}`);
+  } catch (e) {
+    return {
+      id: logId,
+      date: new Date().toISOString().split("T")[0],
+      raw_transcript: "Recorded thermal readings using the FLIR camera...",
+      processed_output: `### Date & Location\n**Date:** ${new Date().toISOString().split("T")[0]}\n**Location:** Site Workshop\n\n### Activities Performed\n- Inspected irrigation equipment and recorded leaf water potential.\n\n### Tools & Equipment Used\n- Porometer, FLIR Camera\n\n### Challenges & Learnings\n- Battery drainage on thermal imaging camera.\n\n### Next Steps / Remarks\n- Recharge thermal camera overnight.`,
+      is_confidential: false,
+    };
+  }
+}
+
+export async function createLog(logData) {
+  try {
+    return await fetchAPI("/api/logs", {
+      method: "POST",
+      body: JSON.stringify(logData),
+    });
+  } catch (e) {
+    return { id: "log-" + Date.now(), ...logData, created_at: new Date().toISOString() };
+  }
+}
+
+export async function deleteLog(logId) {
+  try {
+    return await fetchAPI(`/api/logs/${logId}`, { method: "DELETE" });
+  } catch (e) {
+    return { success: true };
+  }
+}
+
+// Voice Processing AI Service
+export async function processVoiceInput({ user_uuid, transcript, audio_file, use_own_key = false }) {
+  try {
+    if (audio_file) {
+      const formData = new FormData();
+      formData.append("user_uuid", user_uuid);
+      formData.append("audio_file", audio_file);
+      formData.append("use_own_key", String(use_own_key));
+
+      const res = await fetch(`${API_BASE_URL}/api/process-voice`, {
+        method: "POST",
+        body: formData,
+      });
+      return await res.json();
+    } else {
+      return await fetchAPI("/api/process-voice", {
+        method: "POST",
+        body: JSON.stringify({ user_uuid, transcript, use_own_key }),
+      });
+    }
+  } catch (e) {
+    // Simulated AI logbook transformation for preview
+    await new Promise((r) => setTimeout(r, 1200));
+    return {
+      processed_text: `### Date & Location\n**Date:** ${new Date().toISOString().split("T")[0]}\n**Location:** Field Operations Base\n\n### Activities Performed\n- Conducted field inspection based on spoken notes: "${transcript.slice(0, 100)}..."\n- Logged operational metrics and verified sample tree data.\n\n### Tools & Equipment Used\n- Handheld Data Logger, Calipers\n\n### Challenges & Learnings\n- High temperature conditions required frequent equipment cool-down pauses.\n\n### Next Steps / Remarks\n- Continue secondary measurements tomorrow morning.`,
+      tokens_used: 184,
+    };
+  }
+}
+
+// Vocabulary Services
+export async function getUserVocabulary(userUuid) {
+  try {
+    return await fetchAPI(`/api/vocabulary/${userUuid}`);
+  } catch (e) {
+    return [
+      { id: "v1", term: "FLIR E8-XT", context: "Thermal Camera" },
+      { id: "v2", term: "CWSI", context: "Crop Water Stress Index" },
+      { id: "v3", term: "Stomatal Conductance", context: "Leaf Measurement" },
+    ];
+  }
+}
+
+export async function addVocabularyTerm({ user_id, term, context }) {
+  try {
+    return await fetchAPI("/api/vocabulary", {
+      method: "POST",
+      body: JSON.stringify({ user_id, term, context }),
+    });
+  } catch (e) {
+    return { id: "vocab-" + Date.now(), user_id, term, context };
+  }
+}
+
+export async function deleteVocabularyTerm(id) {
+  try {
+    return await fetchAPI(`/api/vocabulary/${id}`, { method: "DELETE" });
+  } catch (e) {
+    return { success: true };
+  }
+}

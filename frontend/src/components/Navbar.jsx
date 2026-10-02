@@ -19,64 +19,60 @@ export default function Navbar({ title, showBack = false, userUuid = null, right
   return (
     <>
       {/* Top Header (56px) */}
-      <header style={styles.topHeader}>
-        <div style={styles.topHeaderInner}>
-          <div style={styles.topLeft}>
+      <header className="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
+        <div className="h-14 max-w-[640px] mx-auto px-gutter flex items-center justify-between">
+          <div className="flex items-center gap-space-sm">
             {showBack ? (
-              <button onClick={() => router.back()} aria-label="Go back" style={styles.backBtn} className="clickable">
-                <ArrowLeft size={24} color="var(--ink-900)" />
+              <button 
+                onClick={() => router.back()} 
+                aria-label="Go back" 
+                className="p-1 -ml-1 text-ink-900 active:scale-95 transition-transform"
+              >
+                <ArrowLeft size={24} />
               </button>
             ) : (
-              <Link href={baseUrl || "/"} style={styles.brandGroup}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C9 20 6.5 18 5.5 15.5" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                <span style={styles.wordmark}>yarn</span>
+              <Link href={baseUrl || "/"} className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C9 20 6.5 18 5.5 15.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="font-heading text-heading tracking-tight text-ink-900 font-semibold lowercase">yarn</span>
               </Link>
             )}
-            {title && showBack && <h1 style={styles.pageTitle}>{title}</h1>}
+            {title && showBack && <h1 className="font-subheading text-subheading font-semibold text-ink-900">{title}</h1>}
           </div>
 
-          {/* Desktop Nav Links (Visible ≥768px) */}
-          {userUuid && (
-            <nav style={styles.desktopNav}>
-              {navItems.map((item) => {
-                const isActive = item.match(pathname);
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    style={{
-                      ...styles.desktopNavLink,
-                      color: isActive ? "var(--accent-600)" : "var(--ink-600)",
-                      borderBottom: isActive ? "2px solid var(--accent-600)" : "2px solid transparent",
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          )}
-
-          <div style={styles.topRight}>{rightAction}</div>
+          <div className="flex items-center gap-space-md">
+             {rightAction || (
+               userUuid && (
+                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <circle cx="12" cy="8" r="5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                     <path d="M20 21C20 16.5817 16.4183 13 12 13C7.58172 13 4 16.5817 4 21" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                   </svg>
+                 </div>
+               )
+             )}
+          </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Nav (64px + safe area) - Visible <768px */}
+      {/* Mobile Bottom Nav */}
       {userUuid && (
-        <nav style={styles.bottomNav}>
-          <div style={styles.bottomNavInner}>
+        <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)] block md:hidden">
+          <div className="h-16 max-w-[640px] mx-auto px-gutter flex items-center justify-around">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.match(pathname);
-              const activeColor = isActive ? "var(--accent-600)" : "var(--ink-600)";
               return (
-                <Link key={item.label} href={item.href} style={styles.bottomNavItem}>
-                  <Icon size={24} color={activeColor} />
-                  <span style={{ ...styles.bottomNavLabel, color: activeColor, fontWeight: isActive ? 600 : 400 }}>
-                    {item.label}
-                  </span>
+                <Link 
+                  key={item.label} 
+                  href={item.href} 
+                  className={`min-w-[48px] min-h-[48px] flex flex-col items-center justify-center gap-0.5 transition-colors ${isActive ? "text-accent-600 font-semibold" : "text-ink-600 hover:text-ink-900"}`}
+                >
+                  <Icon size={24} />
+                  <span className="font-caption text-caption">{item.label}</span>
                 </Link>
               );
             })}
@@ -94,108 +90,3 @@ function RouterHook() {
     return { back: () => {} };
   }
 }
-
-const styles = {
-  topHeader: {
-    height: "56px",
-    backgroundColor: "var(--surface)",
-    borderBottom: "1px solid var(--border)",
-    position: "sticky",
-    top: 0,
-    zIndex: 40,
-    width: "100%",
-  },
-  topHeaderInner: {
-    maxWidth: "640px",
-    margin: "0 auto",
-    height: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "0 var(--s-5)",
-  },
-  topLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: "var(--s-3)",
-  },
-  backBtn: {
-    background: "none",
-    border: "none",
-    padding: "var(--s-2)",
-    margin: "-var(--s-2)",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  brandGroup: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    cursor: "pointer",
-  },
-  wordmark: {
-    fontFamily: "var(--font)",
-    fontWeight: 600,
-    fontSize: "20px",
-    letterSpacing: "-0.02em",
-    color: "var(--ink-900)",
-  },
-  pageTitle: {
-    fontSize: "18px",
-    fontWeight: 600,
-    color: "var(--ink-900)",
-    letterSpacing: "-0.01em",
-  },
-  topRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: "var(--s-2)",
-  },
-  desktopNav: {
-    display: "none",
-    gap: "var(--s-6)",
-
-    "@media (min-width: 768px)": {
-      display: "flex",
-    },
-  },
-  desktopNavLink: {
-    fontSize: "14px",
-    fontWeight: 500,
-    padding: "16px 0",
-    textDecoration: "none",
-    transition: "all var(--dur-fast) var(--ease)",
-  },
-  bottomNav: {
-    position: "fixed",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "calc(64px + env(safe-area-inset-bottom))",
-    backgroundColor: "var(--surface)",
-    borderTop: "1px solid var(--border)",
-    zIndex: 40,
-    paddingBottom: "env(safe-area-inset-bottom)",
-  },
-  bottomNavInner: {
-    maxWidth: "640px",
-    margin: "0 auto",
-    height: "64px",
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-  },
-  bottomNavItem: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "2px",
-    textDecoration: "none",
-  },
-  bottomNavLabel: {
-    fontSize: "12px",
-    lineHeight: "16px",
-  },
-};

@@ -410,10 +410,6 @@ const styles = {
     boxShadow: "var(--shadow-2)",
     padding: "12px var(--s-5) env(safe-area-inset-bottom)",
     zIndex: 30,
-
-    "@media (min-width: 768px)": {
-      bottom: 0,
-    },
   },
   actionBarInner: {
     maxWidth: "640px",

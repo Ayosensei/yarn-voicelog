@@ -41,69 +41,44 @@ export default function WeekStrip({ loggedDates = [] }) {
   const days = getDaysOfWeek();
 
   return (
-    <div style={styles.container}>
-      <div style={styles.stripRow}>
+    <section className="w-full bg-surface rounded-xl shadow-sm p-space-lg mb-space-xl border border-border">
+      <div className="flex items-center justify-between gap-1 w-full max-w-sm mx-auto">
         {days.map((d, index) => {
-          let circleStyle = { ...styles.circle };
+          
+          let circleClasses = "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ";
+          let textClasses = "font-caption text-caption mt-1.5 ";
 
           if (d.isLogged) {
-            circleStyle = { ...circleStyle, backgroundColor: "var(--accent-600)", color: "#FFFFFF", border: "none" };
+            circleClasses += "bg-accent-600 text-surface";
+            textClasses += "text-ink-600";
           } else if (d.isToday) {
-            circleStyle = { ...circleStyle, border: "2px solid var(--accent-600)", backgroundColor: "transparent" };
+            circleClasses += "bg-surface ring-2 ring-accent-600 ring-inset";
+            textClasses = "font-caption-medium text-caption text-accent-700 font-semibold mt-1.5 ";
           } else if (d.isFuture) {
-            circleStyle = { ...circleStyle, backgroundColor: "var(--surface-muted)", opacity: 0.5 };
+            circleClasses += "bg-surface-muted/60 shadow-none";
+            textClasses += "text-ink-400";
           } else {
             // Missed past day
-            circleStyle = { ...circleStyle, backgroundColor: "var(--surface-muted)" };
+            circleClasses += "bg-surface-muted/60 shadow-none";
+            textClasses += "text-ink-400";
           }
 
           return (
-            <div key={index} style={styles.dayCol}>
-              <div style={circleStyle}>
-                {d.isLogged ? <Check size={16} strokeWidth={2.5} /> : null}
+            <div key={index} className="flex flex-col items-center flex-1">
+              <div className={circleClasses}>
+                {d.isLogged ? (
+                  <Check size={16} strokeWidth={2.5} />
+                ) : (d.isToday ? (
+                  <span className="w-2 h-2 rounded-full bg-accent-600"></span>
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-ink-400/40"></span>
+                ))}
               </div>
-              <span style={{ ...styles.dayLabel, color: d.isToday ? "var(--accent-600)" : "var(--ink-600)", fontWeight: d.isToday ? 600 : 400 }}>
-                {d.label}
-              </span>
+              <span className={textClasses}>{d.label}</span>
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }
-
-const styles = {
-  container: {
-    width: "100%",
-    backgroundColor: "var(--surface)",
-    border: "1px solid var(--border)",
-    borderRadius: "var(--r-lg)",
-    padding: "16px var(--s-5)",
-    boxShadow: "var(--shadow-1)",
-  },
-  stripRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  dayCol: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "6px",
-  },
-  circle: {
-    width: "32px",
-    height: "32px",
-    borderRadius: "var(--r-full)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all var(--dur-fast) var(--ease)",
-  },
-  dayLabel: {
-    fontSize: "12px",
-    lineHeight: "16px",
-  },
-};

@@ -26,8 +26,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body>
-        <div className="app-container">{children}</div>
+      <body className="bg-background font-body text-body text-ink-900 min-h-screen flex flex-col antialiased selection:bg-accent-100">
+        <div className="flex-1 flex flex-col relative w-full pt-14 pb-20 bg-background">
+          {children}
+        </div>
       </body>
     </html>
   );

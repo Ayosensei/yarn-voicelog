@@ -35,10 +35,6 @@ const styles = {
     alignItems: "flex-end",
     justifyContent: "center",
     zIndex: 60,
-
-    "@media (min-width: 768px)": {
-      alignItems: "center",
-    },
   },
   modalContent: {
     backgroundColor: "var(--surface)",

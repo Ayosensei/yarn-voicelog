@@ -8,6 +8,7 @@ Uvicorn reads THIS file and starts listening for web requests.
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 import uuid
 import logging
 from typing import Optional
@@ -480,7 +481,7 @@ async def process_voice(request: Request):
         if audio_file and hasattr(audio_file, "read"):
             file_bytes = await audio_file.read()
             filename = getattr(audio_file, "filename", "audio.wav")
-            raw_transcript = transcribe_audio(file_bytes, filename=filename)
+            raw_transcript = await run_in_threadpool(transcribe_audio, file_bytes, filename=filename)
         else:
             raise HTTPException(status_code=400, detail="No audio file uploaded in form data")
     else:
@@ -499,33 +500,35 @@ async def process_voice(request: Request):
         raise HTTPException(status_code=400, detail="No transcript provided or could not transcribe audio")
 
     # Step 1: Get the student's profile (custom prompt, field, vocab)
-    user = None
-    client = get_supabase_client()
-    if client and is_valid_uuid(user_uuid):
-        try:
-            user = db_get_user(str(user_uuid))
-        except Exception as e:
-            logger.error(f"Error fetching user for voice processing: {e}")
+    def fetch_user_data(uid: str):
+        u = None
+        c = get_supabase_client()
+        if c and is_valid_uuid(uid):
+            try:
+                u = db_get_user(uid)
+            except Exception as e:
+                logger.error(f"Error fetching user for voice processing: {e}")
+        if not u:
+            u = fake_users_db.get(uid)
 
-    if not user:
-        user = fake_users_db.get(str(user_uuid))
+        vocab = []
+        if c and is_valid_uuid(uid):
+            try:
+                vocab_records = db_get_user_vocab(uid)
+                vocab = [v["term"] for v in vocab_records if "term" in v]
+            except Exception as e:
+                logger.error(f"Error fetching vocab for voice processing: {e}")
+        if not vocab:
+            vocab = [
+                v["term"] for v in fake_vocab_db.values()
+                if v.get("user_id") == uid and "term" in v
+            ]
+        return u, vocab
+
+    user, user_vocab = await run_in_threadpool(fetch_user_data, str(user_uuid))
 
     custom_prompt = user.get("custom_prompt") if user else None
     field_of_work = user.get("field_of_work") if user else None
-
-    user_vocab = []
-    if client and is_valid_uuid(user_uuid):
-        try:
-            vocab_records = db_get_user_vocab(str(user_uuid))
-            user_vocab = [v["term"] for v in vocab_records if "term" in v]
-        except Exception as e:
-            logger.error(f"Error fetching vocab for voice processing: {e}")
-
-    if not user_vocab:
-        user_vocab = [
-            v["term"] for v in fake_vocab_db.values()
-            if v.get("user_id") == str(user_uuid) and "term" in v
-        ]
 
     # Step 2: Build the full prompt
     full_prompt = build_prompt(
@@ -559,7 +562,7 @@ async def process_voice(request: Request):
 
     # Step 4: Call Gemini!
     try:
-        result = call_gemini(prompt=full_prompt, api_key=api_key_to_use)
+        result = await run_in_threadpool(call_gemini, prompt=full_prompt, api_key=api_key_to_use)
         return VoiceProcessResponse(
             processed_text=result["processed_text"],
             tokens_used=result["tokens_used"],

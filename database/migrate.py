@@ -7,7 +7,10 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(__file__), '..', 'backend', '.env')
 load_dotenv(env_path)
 
-password = urllib.parse.quote('Vf!QRc+uJ3Ug/CZ', safe='')
+raw_password = os.getenv('SUPABASE_DB_PASSWORD')
+if not raw_password:
+    raise ValueError('SUPABASE_DB_PASSWORD not found in .env')
+password = urllib.parse.quote(raw_password, safe='')
 ref = 'qizadnqkqxdadmvhrhhm'
 host = 'aws-0-eu-west-2.pooler.supabase.com'
 conn_str = f'postgresql://postgres.{ref}:{password}@{host}:6543/postgres?sslmode=require'

@@ -11,42 +11,19 @@ export default function Chip({
 }) {
   if (variant === "vocab") {
     return (
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "6px",
-          height: "32px",
-          padding: "0 10px 0 12px",
-          borderRadius: "var(--r-full)",
-          backgroundColor: "var(--accent-50)",
-          color: "var(--accent-700)",
-          fontSize: "14px",
-          fontWeight: 500,
-        }}
-      >
+      <span className="inline-flex items-center gap-1.5 h-8 pl-3 pr-2 rounded-full bg-accent-50 border border-accent-200 text-accent-700 font-small-medium text-small">
         <span>{label}</span>
         {onRemove && (
           <button
             type="button"
             onClick={onRemove}
             aria-label={`Remove ${label}`}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--accent-700)",
-              padding: "2px",
-              margin: "-2px",
-            }}
+            className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-accent-200/50 transition-colors text-accent-700 active:scale-95"
           >
-            <X size={16} />
+            <X size={13} />
           </button>
         )}
-      </div>
+      </span>
     );
   }
 
@@ -55,21 +32,11 @@ export default function Chip({
     <button
       type="button"
       onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        height: "36px",
-        padding: "0 16px",
-        borderRadius: "var(--r-full)",
-        border: selected ? "1px solid var(--accent-200)" : "1px solid var(--border-strong)",
-        backgroundColor: selected ? "var(--accent-50)" : "var(--surface)",
-        color: selected ? "var(--accent-700)" : "var(--ink-900)",
-        fontSize: "14px",
-        fontWeight: selected ? 600 : 400,
-        cursor: "pointer",
-        transition: "all var(--dur-fast) var(--ease)",
-      }}
-      className="clickable"
+      className={`inline-flex items-center h-9 px-4 rounded-full border text-small font-small-medium transition-all active:scale-95 ${
+        selected
+          ? "border-accent-200 bg-accent-50 text-accent-700 font-semibold"
+          : "border-border bg-surface text-ink-900 hover:bg-surface-muted"
+      }`}
     >
       {label}
     </button>

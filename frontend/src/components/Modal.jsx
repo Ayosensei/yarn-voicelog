@@ -6,85 +6,33 @@ export default function Modal({ isOpen, onClose, title, children, actions }) {
   if (!isOpen) return null;
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        {/* Drag handle for mobile bottom sheet */}
-        <div style={styles.dragHandle} />
+    <div
+      className="fixed inset-0 bg-ink-900/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[440px] bg-surface rounded-t-2xl sm:rounded-2xl p-6 shadow-xl border border-border flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-200 pb-safe"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Mobile drag handle */}
+        <div className="w-10 h-1 rounded-full bg-border-strong mx-auto mb-1 sm:hidden" />
 
-        <div style={styles.header}>
-          <h2 style={styles.title}>{title}</h2>
-          <button type="button" onClick={onClose} style={styles.closeBtn} className="clickable">
-            <X size={20} color="var(--ink-600)" />
+        <div className="flex items-center justify-between pb-1">
+          <h2 className="font-heading text-heading text-ink-900 font-semibold">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close modal"
+            className="p-1 -mr-1 rounded-full text-ink-400 hover:text-ink-600 hover:bg-surface-muted transition-colors active:scale-95"
+          >
+            <X size={20} />
           </button>
         </div>
 
-        <div style={styles.body}>{children}</div>
+        <div className="font-body text-body text-ink-600 leading-relaxed">{children}</div>
 
-        {actions && <div style={styles.footer}>{actions}</div>}
+        {actions && <div className="flex flex-col gap-2.5 mt-2">{actions}</div>}
       </div>
     </div>
   );
 }
-
-const styles = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    backgroundColor: "rgba(17, 24, 39, 0.4)",
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    zIndex: 60,
-  },
-  modalContent: {
-    backgroundColor: "var(--surface)",
-    borderTopLeftRadius: "var(--r-xl)",
-    borderTopRightRadius: "var(--r-xl)",
-    width: "100%",
-    maxWidth: "420px",
-    padding: "20px var(--s-5) calc(24px + env(safe-area-inset-bottom))",
-    boxShadow: "var(--shadow-3)",
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    position: "relative",
-  },
-  dragHandle: {
-    width: "36px",
-    height: "4px",
-    borderRadius: "var(--r-full)",
-    backgroundColor: "var(--border-strong)",
-    margin: "0 auto 8px",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
-    fontSize: "20px",
-    fontWeight: 600,
-    color: "var(--ink-900)",
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    padding: "4px",
-    margin: "-4px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  body: {
-    fontSize: "14px",
-    lineHeight: "20px",
-    color: "var(--ink-600)",
-  },
-  footer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    marginTop: "8px",
-  },
-};

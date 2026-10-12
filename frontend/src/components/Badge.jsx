@@ -9,34 +9,26 @@ export default function Badge({ type = "saved", label }) {
     switch (type) {
       case "saved":
         return {
-          bg: "var(--success-bg)",
-          color: "var(--success)",
-          border: "1px solid var(--success-border)",
+          className: "bg-success-bg text-success border-success-border",
           icon: Check,
           defaultLabel: "Saved",
         };
       case "draft":
         return {
-          bg: "var(--warning-bg)",
-          color: "var(--warning)",
-          border: "1px solid var(--warning-border)",
+          className: "bg-warning-bg text-warning border-warning-border",
           icon: PenLine,
           defaultLabel: "Draft",
         };
       case "confidential":
         return {
-          bg: "var(--surface-muted)",
-          color: "var(--ink-600)",
-          border: "1px solid var(--border)",
+          className: "bg-surface-muted text-ink-600 border-border",
           icon: Lock,
           defaultLabel: "Confidential",
         };
       case "optional":
       default:
         return {
-          bg: "var(--surface-muted)",
-          color: "var(--ink-600)",
-          border: "1px solid var(--border)",
+          className: "bg-surface-muted text-ink-600 border-border",
           icon: null,
           defaultLabel: "Optional",
         };
@@ -48,24 +40,11 @@ export default function Badge({ type = "saved", label }) {
   const displayText = label || config.defaultLabel;
 
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "4px",
-        height: "24px",
-        padding: "0 10px",
-        borderRadius: "var(--r-full)",
-        backgroundColor: config.bg,
-        color: config.color,
-        border: config.border,
-        fontSize: "12px",
-        fontWeight: 600,
-        lineHeight: "16px",
-      }}
+    <span
+      className={`inline-flex items-center gap-1 h-6 px-2.5 rounded-full border font-caption-medium text-caption select-none ${config.className}`}
     >
       {Icon && <Icon size={12} strokeWidth={2.5} />}
       <span>{displayText}</span>
-    </div>
+    </span>
   );
 }

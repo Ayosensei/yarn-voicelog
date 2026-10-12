@@ -8,7 +8,10 @@ Uvicorn reads THIS file and starts listening for web requests.
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 import uuid
+import logging
+from typing import Optional
 
 from models import (
     UserCreate, UserUpdate, UserResponse,
@@ -20,8 +23,23 @@ from services.prompt_builder import build_prompt
 from services.gemini_service import call_gemini
 from services.whisper_service import transcribe_audio
 from services.encryption import encrypt_api_key, decrypt_api_key
+from services.supabase_service import (
+    get_supabase_client,
+    is_valid_uuid,
+    db_create_user,
+    db_get_user,
+    db_update_user,
+    db_create_log,
+    db_get_user_logs,
+    db_get_single_log,
+    db_delete_log,
+    db_create_vocab,
+    db_get_user_vocab,
+    db_delete_vocab,
+)
 from config import settings
 
+logger = logging.getLogger("yarn.main")
 
 # ============================================================
 #  CREATE THE APP
@@ -56,9 +74,11 @@ app.add_middleware(
 
 @app.get("/")
 def root():
+    supabase_connected = get_supabase_client() is not None
     return {
         "app": "Yarn VoiceLog API",
         "status": "running",
+        "supabase_connected": supabase_connected,
         "message": "Welcome to Yarn! Visit /docs for interactive API documentation.",
     }
 
@@ -69,7 +89,7 @@ def health_check():
 
 
 # ============================================================
-#  TEMPORARY IN-MEMORY STORAGE (until Supabase is connected)
+#  IN-MEMORY STORAGE (Fallback & Testing)
 # ============================================================
 
 fake_users_db: dict[str, dict] = {}
@@ -83,7 +103,26 @@ fake_vocab_db: dict[str, dict] = {}
 
 @app.post("/api/users", response_model=UserResponse)
 def create_user(user: UserCreate):
-    """Create a new student profile. Returns a UUID."""
+    """Create a new student profile in Supabase. Returns a UUID."""
+    client = get_supabase_client()
+    if client:
+        try:
+            created = db_create_user(name=user.name, field_of_work=user.field_of_work)
+            uid = str(created["id"])
+            # Mirror to in-memory store
+            fake_users_db[uid] = created
+            return {
+                "id": uid,
+                "name": created["name"],
+                "field_of_work": created.get("field_of_work"),
+                "custom_prompt": created.get("custom_prompt"),
+                "has_own_key": bool(created.get("api_key_encrypted")),
+                "created_at": created.get("created_at"),
+            }
+        except Exception as e:
+            logger.error(f"Error creating user in Supabase: {e}")
+
+    # Fallback in-memory
     user_id = str(uuid.uuid4())
     new_user = {
         "id": user_id,
@@ -107,6 +146,24 @@ def create_user(user: UserCreate):
 @app.get("/api/users/{user_uuid}", response_model=UserResponse)
 def get_user(user_uuid: str):
     """Get a student's profile by their UUID."""
+    client = get_supabase_client()
+    if client and is_valid_uuid(user_uuid):
+        try:
+            user = db_get_user(user_uuid)
+            if user:
+                fake_users_db[user_uuid] = user
+                return {
+                    "id": str(user["id"]),
+                    "name": user["name"],
+                    "field_of_work": user.get("field_of_work"),
+                    "custom_prompt": user.get("custom_prompt"),
+                    "has_own_key": bool(user.get("api_key_encrypted")),
+                    "created_at": user.get("created_at"),
+                }
+        except Exception as e:
+            logger.error(f"Error fetching user from Supabase: {e}")
+
+    # Fallback to in-memory
     if user_uuid not in fake_users_db:
         raise HTTPException(status_code=404, detail="User not found")
     user = fake_users_db[user_uuid]
@@ -126,11 +183,39 @@ def update_user(user_uuid: str, updates: UserUpdate):
     Update a student's profile, custom prompt, or personal Gemini API key.
     If an API key is provided, it is securely encrypted with Fernet.
     """
+    client = get_supabase_client()
+    if client and is_valid_uuid(user_uuid):
+        try:
+            db_updates = {}
+            if updates.name is not None:
+                db_updates["name"] = updates.name
+            if updates.field_of_work is not None:
+                db_updates["field_of_work"] = updates.field_of_work
+            if updates.custom_prompt is not None:
+                db_updates["custom_prompt"] = updates.custom_prompt
+            if updates.api_key is not None:
+                raw_key = updates.api_key.strip()
+                db_updates["api_key_encrypted"] = encrypt_api_key(raw_key) if raw_key else None
+
+            updated = db_update_user(user_uuid, db_updates)
+            if updated:
+                fake_users_db[user_uuid] = updated
+                return {
+                    "id": str(updated["id"]),
+                    "name": updated["name"],
+                    "field_of_work": updated.get("field_of_work"),
+                    "custom_prompt": updated.get("custom_prompt"),
+                    "has_own_key": bool(updated.get("api_key_encrypted")),
+                    "created_at": updated.get("created_at"),
+                }
+        except Exception as e:
+            logger.error(f"Error updating user in Supabase: {e}")
+
+    # Fallback in-memory
     if user_uuid not in fake_users_db:
         raise HTTPException(status_code=404, detail="User not found")
 
     user = fake_users_db[user_uuid]
-
     if updates.name is not None:
         user["name"] = updates.name
     if updates.custom_prompt is not None:
@@ -138,7 +223,6 @@ def update_user(user_uuid: str, updates: UserUpdate):
     if updates.field_of_work is not None:
         user["field_of_work"] = updates.field_of_work
 
-    # BYOK: Encrypt personal API key if provided
     if updates.api_key is not None:
         raw_key = updates.api_key.strip()
         if raw_key:
@@ -163,6 +247,33 @@ def update_user(user_uuid: str, updates: UserUpdate):
 @app.post("/api/logs", response_model=LogResponse)
 def create_log(log: LogCreate):
     """Save a new logbook entry."""
+    client = get_supabase_client()
+    if client and is_valid_uuid(log.user_id):
+        try:
+            created = db_create_log(
+                user_id=log.user_id,
+                log_date=log.date,
+                processed_output=log.processed_output,
+                raw_transcript=log.raw_transcript,
+                is_confidential=log.is_confidential,
+                audio_file_url=log.audio_file_url,
+            )
+            lid = str(created["id"])
+            fake_logs_db[lid] = created
+            return {
+                "id": lid,
+                "user_id": str(created["user_id"]),
+                "date": str(created["date"]),
+                "raw_transcript": created.get("raw_transcript"),
+                "processed_output": created["processed_output"],
+                "is_confidential": created.get("is_confidential", False),
+                "audio_file_url": created.get("audio_file_url"),
+                "created_at": created.get("created_at"),
+            }
+        except Exception as e:
+            logger.error(f"Error saving log to Supabase: {e}")
+
+    # Fallback in-memory
     log_id = str(uuid.uuid4())
     new_log = {
         "id": log_id,
@@ -179,11 +290,32 @@ def create_log(log: LogCreate):
 
 
 @app.get("/api/logs/{user_uuid}")
-def get_user_logs(user_uuid: str, start_date: str | None = None, end_date: str | None = None):
+def get_user_logs(user_uuid: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
     """Get all logs for a student, optionally filtered by date range."""
+    client = get_supabase_client()
+    if client and is_valid_uuid(user_uuid):
+        try:
+            logs = db_get_user_logs(user_uuid, start_date=start_date, end_date=end_date)
+            return [
+                {
+                    "id": str(l["id"]),
+                    "user_id": str(l["user_id"]),
+                    "date": str(l["date"]),
+                    "raw_transcript": l.get("raw_transcript"),
+                    "processed_output": l["processed_output"],
+                    "is_confidential": l.get("is_confidential", False),
+                    "audio_file_url": l.get("audio_file_url"),
+                    "created_at": l.get("created_at"),
+                }
+                for l in logs
+            ]
+        except Exception as e:
+            logger.error(f"Error retrieving logs from Supabase: {e}")
+
+    # Fallback in-memory
     user_logs = [
         log for log in fake_logs_db.values()
-        if log["user_id"] == user_uuid
+        if log.get("user_id") == user_uuid
     ]
     if start_date:
         user_logs = [l for l in user_logs if l["date"] >= start_date]
@@ -195,6 +327,25 @@ def get_user_logs(user_uuid: str, start_date: str | None = None, end_date: str |
 @app.get("/api/logs/single/{log_id}", response_model=LogResponse)
 def get_single_log(log_id: str):
     """Get a single log entry by its ID."""
+    client = get_supabase_client()
+    if client and is_valid_uuid(log_id):
+        try:
+            log = db_get_single_log(log_id)
+            if log:
+                return {
+                    "id": str(log["id"]),
+                    "user_id": str(log["user_id"]),
+                    "date": str(log["date"]),
+                    "raw_transcript": log.get("raw_transcript"),
+                    "processed_output": log["processed_output"],
+                    "is_confidential": log.get("is_confidential", False),
+                    "audio_file_url": log.get("audio_file_url"),
+                    "created_at": log.get("created_at"),
+                }
+        except Exception as e:
+            logger.error(f"Error fetching log from Supabase: {e}")
+
+    # Fallback in-memory
     if log_id not in fake_logs_db:
         raise HTTPException(status_code=404, detail="Log not found")
     return fake_logs_db[log_id]
@@ -203,9 +354,20 @@ def get_single_log(log_id: str):
 @app.delete("/api/logs/{log_id}")
 def delete_log(log_id: str):
     """Delete a log entry."""
-    if log_id not in fake_logs_db:
+    client = get_supabase_client()
+    deleted = False
+    if client and is_valid_uuid(log_id):
+        try:
+            deleted = db_delete_log(log_id)
+        except Exception as e:
+            logger.error(f"Error deleting log from Supabase: {e}")
+
+    if log_id in fake_logs_db:
+        del fake_logs_db[log_id]
+        deleted = True
+
+    if not deleted:
         raise HTTPException(status_code=404, detail="Log not found")
-    del fake_logs_db[log_id]
     return {"success": True, "message": "Log deleted"}
 
 
@@ -216,6 +378,23 @@ def delete_log(log_id: str):
 @app.post("/api/vocabulary", response_model=VocabResponse)
 def add_vocab(vocab: VocabCreate):
     """Add a custom technical term for better AI accuracy."""
+    client = get_supabase_client()
+    if client and is_valid_uuid(vocab.user_id):
+        try:
+            created = db_create_vocab(user_id=vocab.user_id, term=vocab.term, context=vocab.context)
+            vid = str(created["id"])
+            fake_vocab_db[vid] = created
+            return {
+                "id": vid,
+                "user_id": str(created["user_id"]),
+                "term": created["term"],
+                "context": created.get("context"),
+                "created_at": created.get("created_at"),
+            }
+        except Exception as e:
+            logger.error(f"Error creating vocab in Supabase: {e}")
+
+    # Fallback in-memory
     vocab_id = str(uuid.uuid4())
     new_vocab = {
         "id": vocab_id,
@@ -231,18 +410,47 @@ def add_vocab(vocab: VocabCreate):
 @app.get("/api/vocabulary/{user_uuid}")
 def get_user_vocab(user_uuid: str):
     """Get all vocabulary terms for a student."""
+    client = get_supabase_client()
+    if client and is_valid_uuid(user_uuid):
+        try:
+            terms = db_get_user_vocab(user_uuid)
+            return [
+                {
+                    "id": str(v["id"]),
+                    "user_id": str(v["user_id"]),
+                    "term": v["term"],
+                    "context": v.get("context"),
+                    "created_at": v.get("created_at"),
+                }
+                for v in terms
+            ]
+        except Exception as e:
+            logger.error(f"Error fetching vocab from Supabase: {e}")
+
+    # Fallback in-memory
     return [
         v for v in fake_vocab_db.values()
-        if v["user_id"] == user_uuid
+        if v.get("user_id") == user_uuid
     ]
 
 
 @app.delete("/api/vocabulary/{vocab_id}")
 def delete_vocab(vocab_id: str):
     """Remove a vocabulary term."""
-    if vocab_id not in fake_vocab_db:
+    client = get_supabase_client()
+    deleted = False
+    if client and is_valid_uuid(vocab_id):
+        try:
+            deleted = db_delete_vocab(vocab_id)
+        except Exception as e:
+            logger.error(f"Error deleting vocab from Supabase: {e}")
+
+    if vocab_id in fake_vocab_db:
+        del fake_vocab_db[vocab_id]
+        deleted = True
+
+    if not deleted:
         raise HTTPException(status_code=404, detail="Term not found")
-    del fake_vocab_db[vocab_id]
     return {"success": True, "message": "Term deleted"}
 
 
@@ -273,7 +481,7 @@ async def process_voice(request: Request):
         if audio_file and hasattr(audio_file, "read"):
             file_bytes = await audio_file.read()
             filename = getattr(audio_file, "filename", "audio.wav")
-            raw_transcript = transcribe_audio(file_bytes, filename=filename)
+            raw_transcript = await run_in_threadpool(transcribe_audio, file_bytes, filename=filename)
         else:
             raise HTTPException(status_code=400, detail="No audio file uploaded in form data")
     else:
@@ -292,14 +500,35 @@ async def process_voice(request: Request):
         raise HTTPException(status_code=400, detail="No transcript provided or could not transcribe audio")
 
     # Step 1: Get the student's profile (custom prompt, field, vocab)
-    user = fake_users_db.get(str(user_uuid))
+    def fetch_user_data(uid: str):
+        u = None
+        c = get_supabase_client()
+        if c and is_valid_uuid(uid):
+            try:
+                u = db_get_user(uid)
+            except Exception as e:
+                logger.error(f"Error fetching user for voice processing: {e}")
+        if not u:
+            u = fake_users_db.get(uid)
+
+        vocab = []
+        if c and is_valid_uuid(uid):
+            try:
+                vocab_records = db_get_user_vocab(uid)
+                vocab = [v["term"] for v in vocab_records if "term" in v]
+            except Exception as e:
+                logger.error(f"Error fetching vocab for voice processing: {e}")
+        if not vocab:
+            vocab = [
+                v["term"] for v in fake_vocab_db.values()
+                if v.get("user_id") == uid and "term" in v
+            ]
+        return u, vocab
+
+    user, user_vocab = await run_in_threadpool(fetch_user_data, str(user_uuid))
+
     custom_prompt = user.get("custom_prompt") if user else None
     field_of_work = user.get("field_of_work") if user else None
-
-    user_vocab = [
-        v["term"] for v in fake_vocab_db.values()
-        if v["user_id"] == str(user_uuid)
-    ]
 
     # Step 2: Build the full prompt
     full_prompt = build_prompt(
@@ -333,7 +562,7 @@ async def process_voice(request: Request):
 
     # Step 4: Call Gemini!
     try:
-        result = call_gemini(prompt=full_prompt, api_key=api_key_to_use)
+        result = await run_in_threadpool(call_gemini, prompt=full_prompt, api_key=api_key_to_use)
         return VoiceProcessResponse(
             processed_text=result["processed_text"],
             tokens_used=result["tokens_used"],

@@ -2,52 +2,26 @@
 
 export default function SegmentedControl({ options = [], selected, onChange }) {
   return (
-    <div style={styles.track}>
+    <div className="h-12 bg-surface-muted rounded-full p-1 flex items-center gap-1 w-full select-none">
       {options.map((opt) => {
         const isSelected = opt.value === selected;
+        const Icon = opt.icon;
         return (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            style={{
-              ...styles.segment,
-              backgroundColor: isSelected ? "var(--accent-600)" : "transparent",
-              color: isSelected ? "#FFFFFF" : "var(--ink-600)",
-              fontWeight: isSelected ? 600 : 500,
-            }}
-            className="clickable"
+            className={`flex-1 h-full rounded-full font-small-medium text-small flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+              isSelected
+                ? "bg-accent-600 text-surface shadow-sm font-semibold"
+                : "text-ink-600 hover:text-ink-900 hover:bg-surface/50"
+            }`}
           >
-            {opt.label}
+            {Icon && <Icon size={18} />}
+            <span>{opt.label}</span>
           </button>
         );
       })}
     </div>
   );
 }
-
-const styles = {
-  track: {
-    height: "48px",
-    backgroundColor: "var(--surface-muted)",
-    borderRadius: "var(--r-full)",
-    padding: "4px",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    width: "100%",
-  },
-  segment: {
-    flex: 1,
-    height: "40px",
-    borderRadius: "var(--r-full)",
-    border: "none",
-    fontSize: "14px",
-    lineHeight: "20px",
-    cursor: "pointer",
-    transition: "all var(--dur-fast) var(--ease)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-};

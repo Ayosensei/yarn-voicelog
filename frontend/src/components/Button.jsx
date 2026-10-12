@@ -13,60 +13,38 @@ export default function Button({
   onClick,
   children,
   type = "button",
-  style = {},
+  className = "",
   ...props
 }) {
   const isDisableOrLoading = disabled || isLoading;
 
-  const getVariantStyles = () => {
+  const getVariantClasses = () => {
     if (isDisableOrLoading) {
-      return {
-        backgroundColor: "var(--surface-muted)",
-        color: "var(--ink-400)",
-        border: "none",
-        boxShadow: "none",
-        cursor: "not-allowed",
-      };
+      return "bg-surface-muted text-ink-400 cursor-not-allowed border-transparent shadow-none";
     }
     switch (variant) {
       case "primary":
-        return {
-          backgroundColor: "var(--accent-600)",
-          color: "#FFFFFF",
-          border: "none",
-        };
+        return "bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-surface shadow-sm";
       case "secondary":
-        return {
-          backgroundColor: "var(--surface)",
-          color: "var(--ink-900)",
-          border: "1px solid var(--border-strong)",
-        };
+        return "bg-surface hover:bg-surface-muted active:scale-[0.98] text-ink-900 border border-border shadow-sm";
       case "ghost":
-        return {
-          backgroundColor: "transparent",
-          color: "var(--accent-600)",
-          border: "none",
-        };
+        return "bg-transparent hover:bg-surface-muted active:scale-[0.98] text-accent-600 hover:text-accent-700";
       case "destructive":
-        return {
-          backgroundColor: "var(--surface)",
-          color: "var(--danger)",
-          border: "1px solid var(--danger)",
-        };
+        return "bg-surface hover:bg-danger-bg active:scale-[0.98] text-danger border border-danger/40";
       default:
-        return {};
+        return "bg-accent-600 text-surface";
     }
   };
 
-  const getSizeStyles = () => {
+  const getSizeClasses = () => {
     switch (size) {
       case "L":
-        return { height: "56px", padding: "0 24px", fontSize: "16px" };
+        return "h-14 px-6 font-subheading text-subheading";
       case "S":
-        return { height: "40px", padding: "0 16px", fontSize: "14px" };
+        return "h-10 px-4 font-small-medium text-small";
       case "M":
       default:
-        return { height: "48px", padding: "0 24px", fontSize: "16px" };
+        return "h-12 px-5 font-subheading text-subheading";
     }
   };
 
@@ -75,30 +53,18 @@ export default function Button({
       type={type}
       disabled={isDisableOrLoading}
       onClick={onClick}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "8px",
-        borderRadius: "var(--r-full)",
-        fontWeight: 600,
-        width: fullWidth ? "100%" : "auto",
-        transition: "all var(--dur-fast) var(--ease)",
-        cursor: isDisableOrLoading ? "not-allowed" : "pointer",
-        ...getSizeStyles(),
-        ...getVariantStyles(),
-        ...style,
-      }}
-      className={!isDisableOrLoading ? "clickable" : ""}
+      className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all select-none ${
+        fullWidth ? "w-full" : "w-auto"
+      } ${getSizeClasses()} ${getVariantClasses()} ${className}`}
       {...props}
     >
       {isLoading ? (
-        <Loader2 size={size === "S" ? 18 : 20} className="animate-spin" />
+        <Loader2 size={size === "S" ? 16 : 20} className="animate-spin" />
       ) : (
-        LeadingIcon && <LeadingIcon size={size === "S" ? 18 : 20} />
+        LeadingIcon && <LeadingIcon size={size === "S" ? 16 : 20} />
       )}
       <span>{children}</span>
-      {!isLoading && TrailingIcon && <TrailingIcon size={size === "S" ? 18 : 20} />}
+      {!isLoading && TrailingIcon && <TrailingIcon size={size === "S" ? 16 : 20} />}
     </button>
   );
 }

@@ -19,6 +19,10 @@ from services.encryption import decrypt_api_key
 client = TestClient(app)
 
 
+@pytest.mark.skipif(
+    not get_supabase_client(),
+    reason="Live Supabase credentials not configured in environment",
+)
 def test_supabase_health_and_connection():
     """Verify Supabase client initializes and root reports supabase_connected=True."""
     db_client = get_supabase_client()
@@ -30,6 +34,10 @@ def test_supabase_health_and_connection():
     assert data["supabase_connected"] is True
 
 
+@pytest.mark.skipif(
+    not get_supabase_client(),
+    reason="Live Supabase credentials not configured in environment",
+)
 def test_supabase_full_user_and_child_lifecycle():
     """
     Test full lifecycle in live Supabase:

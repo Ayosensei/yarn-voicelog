@@ -1,9 +1,15 @@
 import "./globals.css";
+import PWAProvider from "@/components/PWAProvider";
 
 export const metadata = {
   title: "Yarn — Speak your day!",
   description: "Multi-user voice-to-text logbook generator for SIWES students.",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Yarn",
+  },
   icons: {
     icon: "/Logo-standalone-svg.svg",
     apple: "/Logo-standalone-png.png",
@@ -27,9 +33,11 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="bg-background font-body text-body text-ink-900 min-h-screen flex flex-col antialiased selection:bg-accent-100">
-        <div className="flex-1 flex flex-col relative w-full pt-14 pb-20 bg-background">
-          {children}
-        </div>
+        <PWAProvider>
+          <div className="flex-1 flex flex-col relative w-full pt-14 pb-20 bg-background">
+            {children}
+          </div>
+        </PWAProvider>
       </body>
     </html>
   );

@@ -1,11 +1,14 @@
 {
-  "name": "Yarn",
+  "name": "Yarn — Voice-to-Logbook",
   "short_name": "Yarn",
-  "description": "Multi-user voice-to-text logbook generator for SIWES students",
+  "description": "Voice-to-text logbook generator for Nigerian SIWES students",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#FAFAFA",
+  "orientation": "portrait",
+  "background_color": "#F9F9F9",
   "theme_color": "#4F46E5",
+  "categories": ["education", "productivity", "utilities"],
   "icons": [
     {
       "src": "/Logo-standalone-png.png",

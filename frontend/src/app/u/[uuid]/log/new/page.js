@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import MicButton from "@/components/MicButton";
 import Waveform from "@/components/Waveform";
-import Button from "@/components/Button";
 import Toast from "@/components/Toast";
 import { processVoiceInput, createLog } from "@/lib/api";
 import { Sparkles, Lock, Upload, AlertTriangle, RefreshCw } from "lucide-react";
@@ -128,14 +127,12 @@ export default function NewLogPage() {
     setIsProcessing(true);
 
     try {
-      // Process voice with Gemini / Whisper backend
       const response = await processVoiceInput({
         user_uuid: userUuid,
         transcript: transcript,
         audio_file: audioFile,
       });
 
-      // Save created log entry
       const newLog = await createLog({
         user_id: userUuid,
         date: date,
@@ -156,263 +153,190 @@ export default function NewLogPage() {
     <>
       <Navbar userUuid={userUuid} showBack title="New Log" />
 
-      <main className="content-column">
-        {/* Date Selector */}
-        <div style={styles.dateRow}>
-          <label htmlFor="log-date" style={styles.dateLabel}>
-            Logbook Date:
-          </label>
-          <input
-            id="log-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="yarn-input"
-            style={{ width: "auto", height: "40px", fontSize: "14px" }}
-          />
+      <main className="w-full max-w-[640px] mx-auto px-gutter pt-2 pb-24 flex flex-col flex-1">
+        {/* Context Banner: SIWES Attachment Status & Date */}
+        <div className="w-full flex items-center justify-between py-space-sm mb-space-sm">
+          <div className="flex items-center gap-space-xs">
+            <span className="w-2 h-2 rounded-full bg-success"></span>
+            <span className="font-caption-medium text-caption text-ink-600">Online • Local cache enabled</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              aria-label="Logbook date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="px-2.5 py-1 rounded-full bg-surface-muted text-ink-600 font-caption-medium text-caption border border-border outline-none focus:ring-1 focus:ring-accent-600 cursor-pointer shadow-sm"
+            />
+          </div>
         </div>
 
-        {/* Mic & Waveform Unit */}
-        <div style={styles.micSection}>
+        {/* Voice Recording Zone */}
+        <section aria-label="Audio recorder" className="flex flex-col items-center justify-center py-4 select-none">
+          {/* Sound Waveform Graphic */}
+          <Waveform isRecording={isRecording} audioLevel={isRecording ? 24 : 0} />
+
+          {/* Active Mic / Stop Trigger with Concentric Pulsing Rings */}
           <MicButton state={recordingState} onClick={toggleRecording} />
 
-          {/* Recording Timer */}
-          <div className="display-text" style={styles.timer}>
-            {formatTimer(seconds)}
+          {/* Digital Duration Timer & Guidance */}
+          <div className="flex flex-col items-center mt-3 text-center">
+            <time
+              className="font-display text-display text-ink-900 tracking-tight"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            >
+              {formatTimer(seconds)}
+            </time>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="font-small text-small text-ink-600">
+                {isRecording
+                  ? "Listening... speak naturally"
+                  : recordingState === "denied"
+                  ? "Microphone access blocked"
+                  : "Tap mic to speak your day"}
+              </span>
+            </div>
           </div>
-
-          {/* Waveform Visualizer */}
-          <div style={{ width: "100%", maxWidth: "360px" }}>
-            <Waveform isRecording={isRecording} audioLevel={isRecording ? 25 : 0} />
-          </div>
-
-          <p className="caption-text" style={{ color: "var(--ink-600)" }}>
-            {isRecording ? "Tap red square to stop" : "Tap mic to speak your day"}
-          </p>
-        </div>
+        </section>
 
         {/* Mic Permission Warning Box (If Denied) */}
         {recordingState === "denied" && (
-          <div style={styles.warningBox}>
-            <AlertTriangle size={18} color="var(--warning)" />
-            <span>
-              Yarn can't hear you yet. Allow microphone access in your browser settings, or upload a voice memo below.
+          <div className="w-full mt-2 mb-4 p-4 rounded-xl bg-warning-bg border border-warning-border flex items-start gap-3 text-warning">
+            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+            <span className="font-small text-small">
+              Yarn cannot hear you yet. Allow microphone access in your browser settings, or upload an audio memo below.
             </span>
           </div>
         )}
 
-        {/* Live Transcript Card */}
-        <div className="yarn-card" style={styles.transcriptCard}>
-          <div style={styles.cardHeaderRow}>
-            <span className="overline-text" style={{ color: "var(--ink-600)" }}>
-              LIVE TRANSCRIPT
-            </span>
-            {isRecording && <span style={styles.liveDot} />}
-          </div>
-
-          <textarea
-            className="yarn-textarea"
-            style={styles.transcriptInput}
-            placeholder="Your words will appear here as you speak. You can also type or edit directly."
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-          />
-        </div>
-
-        {/* Confidential Toggle & Audio Upload Fallback */}
-        <div style={styles.optionsBlock}>
-          {/* Confidential Mode Switch */}
-          <div className="yarn-card" style={styles.optionRow}>
-            <div style={styles.optionInfo}>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Lock size={16} color="var(--ink-900)" />
-                <span className="subheading-text" style={{ fontSize: "14px" }}>
-                  Mark as confidential
+        {/* Live Transcription Output Card */}
+        <section
+          aria-live="polite"
+          className="w-full mt-4 bg-surface rounded-xl shadow-[0_1px_2px_rgba(16,24,40,0.05)] border border-border p-5 min-h-[160px] flex flex-col justify-between"
+        >
+          <div>
+            {/* Card Subheader Row */}
+            <div className="flex items-center justify-between pb-3">
+              <div className="flex items-center gap-2">
+                {isRecording ? (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-danger"></span>
+                  </span>
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-ink-400"></span>
+                )}
+                <span className="font-overline text-overline text-ink-600 uppercase tracking-wider font-semibold">
+                  Live Transcript
                 </span>
               </div>
-              <span className="caption-text" style={{ color: "var(--ink-600)" }}>
-                Audio and raw text deleted immediately. Saves only final output.
-              </span>
             </div>
 
-            <label style={styles.toggleTrack}>
-              <input
-                type="checkbox"
-                checked={isConfidential}
-                onChange={(e) => setIsConfidential(e.target.checked)}
-                style={styles.toggleInput}
-              />
-              <span style={{ ...styles.toggleThumb, left: isConfidential ? "24px" : "4px" }} />
-            </label>
+            {/* Real-time Text Buffer */}
+            <textarea
+              className="w-full min-h-[100px] font-reading text-reading text-ink-900 bg-transparent border-none outline-none resize-none placeholder:text-ink-400 focus:ring-0 leading-[26px]"
+              placeholder="Your words will appear here as you speak. You can also type or edit directly..."
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+            />
           </div>
 
-          {/* Upload Fallback button */}
-          <div style={styles.uploadRow}>
-            <label htmlFor="voice-file-upload" className="clickable" style={styles.uploadBtn}>
-              <Upload size={16} color="var(--accent-600)" />
-              <span>{audioFile ? audioFile.name : "Or upload voice memo (MP3/M4A)"}</span>
-              <input
-                id="voice-file-upload"
-                type="file"
-                accept="audio/*"
-                onChange={handleFileUpload}
-                style={{ display: "none" }}
-              />
-            </label>
+          {/* Sub-badge cue */}
+          <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-muted text-ink-600 font-caption text-caption">
+              <Sparkles size={13} className="text-accent-600" />
+              AI Audio Engine: English (NG)
+            </span>
+            <span className="font-caption text-caption text-ink-400">Tap anywhere to edit</span>
           </div>
+        </section>
+
+        {/* Confidentiality Mode Switch */}
+        <section className="w-full mt-4 bg-surface rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-[0_1px_2px_rgba(16,24,40,0.03)] border border-border">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-surface-muted flex items-center justify-center shrink-0 text-ink-600">
+              <Lock size={18} />
+            </div>
+            <div className="flex flex-col min-w-0 pr-1">
+              <span className="font-small-medium text-small text-ink-900 font-medium truncate">
+                Mark as confidential
+              </span>
+              <span className="font-caption text-caption text-ink-600 line-clamp-1">
+                Raw audio and transcript won't be stored. Only the final entry is saved.
+              </span>
+            </div>
+          </div>
+
+          {/* Toggle Switch */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isConfidential}
+            onClick={() => setIsConfidential(!isConfidential)}
+            className={`relative shrink-0 w-[52px] h-[32px] rounded-full transition-colors cursor-pointer focus:outline-none ${
+              isConfidential ? "bg-accent-600" : "bg-surface-container-highest"
+            }`}
+          >
+            <span
+              className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-surface shadow-[0_1px_3px_rgba(0,0,0,0.15)] transition-transform duration-200 ease-in-out ${
+                isConfidential ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </section>
+
+        {/* Secondary Audio Ingestion Link */}
+        <div className="flex justify-center items-center mt-3">
+          <label
+            htmlFor="voice-file-upload"
+            className="h-touch-min px-4 flex items-center gap-1.5 text-accent-600 hover:text-accent-700 font-small-medium text-small cursor-pointer active:scale-98 transition-transform select-none"
+          >
+            <Upload size={18} />
+            <span>{audioFile ? `Attached: ${audioFile.name}` : "Upload a voice memo instead (MP3/M4A)"}</span>
+            <input
+              id="voice-file-upload"
+              type="file"
+              accept="audio/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+
+        {/* Action Controls */}
+        <div className="w-full mt-4 pt-2 flex items-center gap-3">
+          {transcript && (
+            <button
+              type="button"
+              onClick={() => {
+                setTranscript("");
+                setSeconds(0);
+              }}
+              className="h-12 px-5 rounded-full bg-surface border border-border text-ink-600 hover:text-ink-900 font-subheading text-subheading active:scale-95 transition-all shadow-sm"
+            >
+              Clear
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleGenerateLog}
+            disabled={isProcessing || (!transcript.trim() && !audioFile)}
+            className="flex-1 h-12 rounded-full bg-accent-600 hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-surface font-subheading text-subheading shadow-[0_2px_8px_rgba(79,70,229,0.25)] active:scale-98 transition-all flex items-center justify-center gap-2 px-5"
+          >
+            {isProcessing ? (
+              <RefreshCw size={20} className="animate-spin" />
+            ) : (
+              <Sparkles size={20} />
+            )}
+            <span className="truncate">
+              {isProcessing ? "Generating Entry..." : "Generate Logbook Entry"}
+            </span>
+          </button>
         </div>
       </main>
-
-      {/* Sticky Bottom Action Bar */}
-      <div style={styles.stickyActionBar}>
-        <div style={styles.actionBarInner}>
-          <Button
-            variant="primary"
-            size="L"
-            fullWidth
-            isLoading={isProcessing}
-            leadingIcon={Sparkles}
-            onClick={handleGenerateLog}
-          >
-            Generate Logbook Entry
-          </Button>
-        </div>
-      </div>
 
       <Toast message={toastMessage} isOpen={!!toastMessage} onClose={() => setToastMessage("")} />
     </>
   );
 }
-
-const styles = {
-  dateRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "var(--s-5)",
-  },
-  dateLabel: {
-    fontSize: "14px",
-    fontWeight: 500,
-    color: "var(--ink-900)",
-  },
-  micSection: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "var(--s-4)",
-    marginBottom: "var(--s-6)",
-  },
-  timer: {
-    color: "var(--ink-900)",
-    marginTop: "8px",
-  },
-  warningBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "12px 16px",
-    borderRadius: "var(--r-md)",
-    backgroundColor: "var(--warning-bg)",
-    border: "1px solid var(--warning-border)",
-    color: "var(--warning)",
-    fontSize: "14px",
-    marginBottom: "var(--s-5)",
-  },
-  transcriptCard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "var(--s-3)",
-    minHeight: "180px",
-    marginBottom: "var(--s-5)",
-  },
-  cardHeaderRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  liveDot: {
-    width: "8px",
-    height: "8px",
-    borderRadius: "var(--r-full)",
-    backgroundColor: "var(--danger)",
-    animation: "micPulse 1.2s infinite",
-  },
-  transcriptInput: {
-    border: "none",
-    padding: 0,
-    backgroundColor: "transparent",
-    minHeight: "120px",
-    boxShadow: "none",
-    outline: "none",
-  },
-  optionsBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "var(--s-4)",
-  },
-  optionRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "16px var(--s-5)",
-  },
-  optionInfo: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-  },
-  toggleTrack: {
-    position: "relative",
-    width: "52px",
-    height: "32px",
-    borderRadius: "var(--r-full)",
-    backgroundColor: "var(--border-strong)",
-    cursor: "pointer",
-    flexShrink: 0,
-  },
-  toggleInput: {
-    display: "none",
-  },
-  toggleThumb: {
-    position: "absolute",
-    top: "4px",
-    width: "24px",
-    height: "24px",
-    borderRadius: "var(--r-full)",
-    backgroundColor: "#FFFFFF",
-    transition: "left var(--dur-fast) var(--ease)",
-  },
-  uploadRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  uploadBtn: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    color: "var(--accent-600)",
-    fontSize: "14px",
-    fontWeight: 500,
-    padding: "8px 16px",
-    borderRadius: "var(--r-full)",
-    backgroundColor: "var(--accent-50)",
-    cursor: "pointer",
-  },
-  stickyActionBar: {
-    position: "fixed",
-    bottom: "calc(64px + env(safe-area-inset-bottom))",
-    left: 0,
-    right: 0,
-    backgroundColor: "var(--surface)",
-    borderTop: "1px solid var(--border)",
-    boxShadow: "var(--shadow-2)",
-    padding: "12px var(--s-5) env(safe-area-inset-bottom)",
-    zIndex: 30,
-  },
-  actionBarInner: {
-    maxWidth: "640px",
-    margin: "0 auto",
-  },
-};

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { createUser } from "@/lib/api";
 import { Mic, Sparkles, Check, RefreshCw, AlertCircle, User, ArrowRight } from "lucide-react";
@@ -321,6 +322,16 @@ function LandingContent() {
             <p className="text-center font-caption text-caption text-ink-400">
               Your logbook is private. We never share your data.
             </p>
+
+            <footer className="pt-2 flex items-center justify-center gap-3 text-xs text-ink-400">
+              <Link href="/privacy" className="hover:text-ink-600 underline transition-colors">
+                Privacy Policy
+              </Link>
+              <span>•</span>
+              <Link href="/terms" className="hover:text-ink-600 underline transition-colors">
+                Terms of Service
+              </Link>
+            </footer>
           </section>
         </div>
       </main>

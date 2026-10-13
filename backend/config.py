@@ -1,4 +1,4 @@
-﻿"""
+"""
 config.py - Loads environment variables from .env file
 
 Think of this as the "settings page" for our backend.
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"          # Tells Pydantic: "read from the .env file"
         env_file_encoding = "utf-8"
+        extra = "ignore"           # Silently ignore unknown env vars (e.g. PROJECT_NAME, DEBUG)
 
 
 # Create one instance that the whole app can import and use

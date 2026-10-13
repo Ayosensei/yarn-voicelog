@@ -11,7 +11,7 @@ raw_password = os.getenv('SUPABASE_DB_PASSWORD')
 if not raw_password:
     raise ValueError('SUPABASE_DB_PASSWORD not found in .env')
 password = urllib.parse.quote(raw_password, safe='')
-ref = 'qizadnqkqxdadmvhrhhm'
+ref = 'pnbxyubafwfqaclwcsya'
 host = 'aws-0-eu-west-2.pooler.supabase.com'
 conn_str = f'postgresql://postgres.{ref}:{password}@{host}:6543/postgres?sslmode=require'
 

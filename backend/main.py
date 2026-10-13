@@ -241,6 +241,96 @@ def update_user(user_uuid: str, updates: UserUpdate):
 
 
 # ============================================================
+#  AUTH ENDPOINTS (Google OAuth via Supabase)
+# ============================================================
+
+@app.post("/api/users/auth", response_model=UserResponse)
+def auth_upsert_user(request_data: dict):
+    """
+    Called by the frontend after Google OAuth completes.
+    Creates a new Yarn user record if this is their first login,
+    or returns the existing record if they've signed in before.
+    Uses auth_user_id (Supabase Auth UUID) as the unique key.
+    """
+    auth_user_id = request_data.get("auth_user_id")
+    email = request_data.get("email", "")
+    name = request_data.get("name") or (email.split("@")[0] if email else "Student")
+    avatar_url = request_data.get("avatar_url")
+
+    if not auth_user_id:
+        raise HTTPException(status_code=400, detail="Missing auth_user_id")
+
+    client = get_supabase_client()
+    if not client:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    try:
+        # Try to find existing user by auth_user_id
+        existing = client.table("users").select("*").eq("auth_user_id", auth_user_id).maybe_single().execute()
+        if existing.data:
+            user = existing.data
+            return {
+                "id": str(user["id"]),
+                "name": user["name"],
+                "field_of_work": user.get("field_of_work"),
+                "custom_prompt": user.get("custom_prompt"),
+                "has_own_key": bool(user.get("api_key_encrypted")),
+                "created_at": user.get("created_at"),
+            }
+
+        # First login — create new record
+        new_user = client.table("users").insert({
+            "auth_user_id": auth_user_id,
+            "email": email,
+            "name": name,
+            "avatar_url": avatar_url,
+        }).execute()
+
+        user = new_user.data[0]
+        return {
+            "id": str(user["id"]),
+            "name": user["name"],
+            "field_of_work": user.get("field_of_work"),
+            "custom_prompt": user.get("custom_prompt"),
+            "has_own_key": False,
+            "created_at": user.get("created_at"),
+        }
+    except Exception as e:
+        logger.error(f"Error in auth upsert: {e}")
+        raise HTTPException(status_code=500, detail=f"Auth upsert failed: {str(e)}")
+
+
+@app.get("/api/users/by-auth/{auth_user_id}", response_model=UserResponse)
+def get_user_by_auth_id(auth_user_id: str):
+    """
+    Look up a Yarn user by their Supabase Auth user ID.
+    Used by the landing page to redirect already-signed-in users to their dashboard.
+    """
+    client = get_supabase_client()
+    if not client:
+        raise HTTPException(status_code=503, detail="Database unavailable")
+
+    try:
+        result = client.table("users").select("*").eq("auth_user_id", auth_user_id).maybe_single().execute()
+        if not result.data:
+            raise HTTPException(status_code=404, detail="User not found")
+        user = result.data
+        return {
+            "id": str(user["id"]),
+            "name": user["name"],
+            "field_of_work": user.get("field_of_work"),
+            "custom_prompt": user.get("custom_prompt"),
+            "has_own_key": bool(user.get("api_key_encrypted")),
+            "created_at": user.get("created_at"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching user by auth_id: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
 #  LOG ENDPOINTS (Create, Read, Delete)
 # ============================================================
 

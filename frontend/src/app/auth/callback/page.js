@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -13,23 +13,42 @@ import { createClient } from "@/lib/supabase/client";
  */
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const hasHandled = useRef(false);
 
   useEffect(() => {
+    if (hasHandled.current) return;
+    hasHandled.current = true;
+
     const supabase = createClient();
 
     async function handleCallback() {
-      // Exchange the URL code for a session
-      const { data, error } = await supabase.auth.exchangeCodeForSession(
-        window.location.href
-      );
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
 
-      if (error || !data.session) {
-        console.error("Auth callback error:", error);
+      let session = null;
+
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error("Auth callback code exchange error:", error);
+        } else {
+          session = data?.session;
+        }
+      }
+
+      // Fallback: check if session already exists
+      if (!session) {
+        const { data: existingSession } = await supabase.auth.getSession();
+        session = existingSession?.session;
+      }
+
+      if (!session) {
+        console.error("No valid session found after callback");
         router.replace("/?message=Sign+in+failed.+Please+try+again.");
         return;
       }
 
-      const { user } = data.session;
+      const { user } = session;
 
       try {
         const guestUuid = typeof window !== "undefined" ? localStorage.getItem("yarn_guest_uuid") : null;

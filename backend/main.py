@@ -335,9 +335,9 @@ def auth_upsert_user(request_data: dict):
 
     try:
         # Try to find existing user by auth_user_id
-        existing = client.table("users").select("*").eq("auth_user_id", auth_user_id).maybe_single().execute()
-        if existing.data:
-            user = existing.data
+        res = client.table("users").select("*").eq("auth_user_id", auth_user_id).execute()
+        if res.data and len(res.data) > 0:
+            user = res.data[0]
             user_id = str(user["id"])
             # Merge guest data into existing account if guest_uuid provided
             if guest_uuid and is_valid_uuid(guest_uuid) and guest_uuid != user_id:
@@ -355,13 +355,14 @@ def auth_upsert_user(request_data: dict):
 
         # If user has a guest record that has not yet been linked to Google auth:
         if guest_uuid and is_valid_uuid(guest_uuid):
-            guest = client.table("users").select("*").eq("id", guest_uuid).maybe_single().execute()
-            if guest.data and not guest.data.get("auth_user_id"):
+            guest_res = client.table("users").select("*").eq("id", guest_uuid).execute()
+            if guest_res.data and len(guest_res.data) > 0 and not guest_res.data[0].get("auth_user_id"):
+                guest_user = guest_res.data[0]
                 updated = client.table("users").update({
                     "auth_user_id": auth_user_id,
-                    "email": email or guest.data.get("email"),
-                    "name": name or guest.data.get("name"),
-                    "avatar_url": avatar_url or guest.data.get("avatar_url"),
+                    "email": email or guest_user.get("email"),
+                    "name": name or guest_user.get("name"),
+                    "avatar_url": avatar_url or guest_user.get("avatar_url"),
                 }).eq("id", guest_uuid).execute()
                 if updated.data and len(updated.data) > 0:
                     user = updated.data[0]
@@ -407,10 +408,10 @@ def get_user_by_auth_id(auth_user_id: str):
         raise HTTPException(status_code=503, detail="Database unavailable")
 
     try:
-        result = client.table("users").select("*").eq("auth_user_id", auth_user_id).maybe_single().execute()
-        if not result.data:
+        result = client.table("users").select("*").eq("auth_user_id", auth_user_id).execute()
+        if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail="User not found")
-        user = result.data
+        user = result.data[0]
         return {
             "id": str(user["id"]),
             "name": user["name"],

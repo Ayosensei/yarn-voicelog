@@ -1,4 +1,4 @@
-﻿"""
+"""
 test_api.py - Automated Unit & Integration Tests for Yarn Backend
 
 Tests:
@@ -184,6 +184,32 @@ def test_logs_crud_and_confidential_mode():
     logs_res = client.get(f"/api/logs/{user_id}")
     assert logs_res.status_code == 200
     assert len(logs_res.json()) == 2
+
+    # Soft delete one log
+    target_id = res_normal.json()["id"]
+    del_res = client.delete(f"/api/logs/{target_id}")
+    assert del_res.status_code == 200
+    assert "trash" in del_res.json()["message"]
+
+    # Active logs list should now have only 1 log
+    logs_active = client.get(f"/api/logs/{user_id}")
+    assert logs_active.status_code == 200
+    assert len(logs_active.json()) == 1
+
+    # Trash query should return the trashed log
+    logs_trash = client.get(f"/api/logs/{user_id}?only_deleted=true")
+    assert logs_trash.status_code == 200
+    assert len(logs_trash.json()) == 1
+    assert logs_trash.json()[0]["id"] == target_id
+
+    # Restore from trash
+    restore_res = client.post(f"/api/logs/{target_id}/restore")
+    assert restore_res.status_code == 200
+
+    # Active logs list should have 2 logs again
+    logs_restored = client.get(f"/api/logs/{user_id}")
+    assert logs_restored.status_code == 200
+    assert len(logs_restored.json()) == 2
 
 
 def test_process_voice_validations():

@@ -32,12 +32,23 @@ export async function middleware(request) {
 
   const { pathname } = request.nextUrl;
 
-  // Protect /u/[uuid] routes — redirect to sign-in if not authenticated
-  if (pathname.startsWith("/u/") && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    url.searchParams.set("message", "Please sign in to access your logbook.");
-    return NextResponse.redirect(url);
+  // Check for guest UUID cookie
+  const guestUuid = request.cookies.get("yarn_guest_uuid")?.value;
+  const pathParts = pathname.split("/");
+  const routeUuid = pathParts[1] === "u" ? pathParts[2] : null;
+
+  // If accessing a /u/[uuid] route:
+  if (routeUuid) {
+    if (!user) {
+      if (!guestUuid) {
+        // Auto-set the guest cookie to the route UUID so bookmarked direct links work
+        supabaseResponse.cookies.set("yarn_guest_uuid", routeUuid, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365, // 1 year
+          sameSite: "lax",
+        });
+      }
+    }
   }
 
   // If already signed in and hitting the landing page, redirect to dashboard

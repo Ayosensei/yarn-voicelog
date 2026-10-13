@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Mic, Sparkles, Check, RefreshCw, AlertCircle } from "lucide-react";
+import { createUser } from "@/lib/api";
+import { Mic, Sparkles, Check, RefreshCw, AlertCircle, User, ArrowRight } from "lucide-react";
 
 // Google "G" logo SVG
 function GoogleIcon() {
@@ -29,15 +30,27 @@ function GoogleIcon() {
   );
 }
 
-export default function LandingPage() {
+function LandingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [error, setError] = useState(searchParams.get("message") || "");
+  const [isGuestOpen, setIsGuestOpen] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestField, setGuestField] = useState("");
+  const [isSubmittingGuest, setIsSubmittingGuest] = useState(false);
+  const [savedGuestUuid, setSavedGuestUuid] = useState(null);
 
-  // Check if user is already signed in → redirect to dashboard
+  // Check if user is already signed in or has saved guest session
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedGuest = localStorage.getItem("yarn_guest_uuid");
+      if (storedGuest) {
+        setSavedGuestUuid(storedGuest);
+      }
+    }
+
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -75,6 +88,43 @@ export default function LandingPage() {
       setIsLoading(false);
     }
     // If no error, browser will redirect to Google — no further action needed
+  };
+
+  const handleGuestSubmit = async (e) => {
+    e.preventDefault();
+    if (!guestName.trim()) {
+      setError("Please enter your name to start as guest.");
+      return;
+    }
+    setIsSubmittingGuest(true);
+    setError("");
+
+    try {
+      const user = await createUser({
+        name: guestName.trim(),
+        field_of_work: guestField.trim() || "General Engineering",
+      });
+
+      if (user?.id) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("yarn_guest_uuid", user.id);
+          document.cookie = `yarn_guest_uuid=${user.id}; path=/; max-age=31536000; SameSite=Lax`;
+        }
+        router.push(`/u/${user.id}`);
+      } else {
+        throw new Error("Could not initialize guest session");
+      }
+    } catch (err) {
+      setError("Failed to create guest session. Please try again.");
+      setIsSubmittingGuest(false);
+    }
+  };
+
+  const handleResumeGuest = () => {
+    if (savedGuestUuid) {
+      document.cookie = `yarn_guest_uuid=${savedGuestUuid}; path=/; max-age=31536000; SameSite=Lax`;
+      router.push(`/u/${savedGuestUuid}`);
+    }
   };
 
   if (isCheckingSession) {
@@ -157,7 +207,7 @@ export default function LandingPage() {
                 Start your logbook
               </h2>
               <p className="font-small text-small text-ink-600 mt-1">
-                Sign in with Google to save your entries and access them from any device.
+                Sign in with Google to sync across devices, or continue as a guest.
               </p>
             </div>
 
@@ -190,6 +240,84 @@ export default function LandingPage() {
               )}
             </button>
 
+            {/* Resume existing guest session if present */}
+            {savedGuestUuid && (
+              <button
+                type="button"
+                onClick={handleResumeGuest}
+                className="w-full h-11 rounded-full bg-surface-muted hover:bg-border text-ink-900 font-small text-small font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <span>Resume previous guest session</span>
+                <ArrowRight size={16} />
+              </button>
+            )}
+
+            {/* Divider */}
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-border"></div>
+              <span className="flex-shrink mx-4 text-ink-400 font-caption text-caption">or</span>
+              <div className="flex-grow border-t border-border"></div>
+            </div>
+
+            {/* Guest Option */}
+            {!isGuestOpen ? (
+              <button
+                type="button"
+                onClick={() => setIsGuestOpen(true)}
+                className="text-center font-small text-small text-ink-600 hover:text-ink-900 font-medium py-1 transition-colors"
+              >
+                Continue as guest without account →
+              </button>
+            ) : (
+              <form onSubmit={handleGuestSubmit} className="flex flex-col gap-3 pt-1">
+                <div>
+                  <label className="block font-small text-small font-medium text-ink-900 mb-1">
+                    Your name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Chidi Okafor"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body outline-none focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+                <div>
+                  <label className="block font-small text-small font-medium text-ink-900 mb-1">
+                    Field of work / Study
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Mechanical Engineering"
+                    value={guestField}
+                    onChange={(e) => setGuestField(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body outline-none focus:ring-2 focus:ring-accent-600"
+                  />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingGuest}
+                    className="flex-1 h-12 rounded-full bg-ink-900 hover:bg-ink-900/90 text-white font-small text-small font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isSubmittingGuest ? (
+                      <RefreshCw size={16} className="animate-spin" />
+                    ) : (
+                      "Start as Guest"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsGuestOpen(false)}
+                    className="px-4 h-12 rounded-full border border-border hover:bg-surface-muted text-ink-600 font-small text-small transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
             <p className="text-center font-caption text-caption text-ink-400">
               Your logbook is private. We never share your data.
             </p>
@@ -197,5 +325,19 @@ export default function LandingPage() {
         </div>
       </main>
     </>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="w-8 h-8 rounded-full border-[3px] border-accent-600/20 border-t-accent-600 animate-spin" />
+        </div>
+      }
+    >
+      <LandingContent />
+    </Suspense>
   );
 }

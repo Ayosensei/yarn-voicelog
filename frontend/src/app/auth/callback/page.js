@@ -32,7 +32,9 @@ export default function AuthCallbackPage() {
       const { user } = data.session;
 
       try {
-        // Create or fetch the Yarn user record via backend
+        const guestUuid = typeof window !== "undefined" ? localStorage.getItem("yarn_guest_uuid") : null;
+
+        // Create or fetch the Yarn user record via backend (merging guest data if present)
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/users/auth`,
           {
@@ -44,6 +46,7 @@ export default function AuthCallbackPage() {
               name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Student",
               avatar_url: user.user_metadata?.avatar_url || null,
               google_id: user.user_metadata?.provider_id || user.id,
+              guest_uuid: guestUuid || null,
             }),
           }
         );
@@ -51,6 +54,13 @@ export default function AuthCallbackPage() {
         if (!res.ok) throw new Error("Failed to create user profile");
 
         const yarnUser = await res.json();
+
+        // Clear guest session since account is now linked to Google OAuth
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("yarn_guest_uuid");
+          document.cookie = "yarn_guest_uuid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
+
         router.replace(`/u/${yarnUser.id}`);
       } catch (err) {
         console.error("User creation error:", err);

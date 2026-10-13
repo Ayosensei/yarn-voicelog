@@ -6,7 +6,7 @@ Instead of typing API keys directly in our code (dangerous!),
 we read them from the .env file.
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # Google Gemini AI
     gemini_api_key: str = ""
 
-    # Supabase Database (Femi will provide these later)
+    # Supabase Database (PostgreSQL + Auth)
     supabase_url: str = ""
     supabase_key: str = ""
 
@@ -28,10 +28,15 @@ class Settings(BaseSettings):
     # Fernet encryption key (for encrypting user-provided API keys)
     fernet_secret_key: str = ""
 
-    class Config:
-        env_file = ".env"          # Tells Pydantic: "read from the .env file"
-        env_file_encoding = "utf-8"
-        extra = "ignore"           # Silently ignore unknown env vars (e.g. PROJECT_NAME, DEBUG)
+    # Frontend deployment URL & CORS origins
+    frontend_url: str = ""
+    cors_origins: str = ""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 # Create one instance that the whole app can import and use

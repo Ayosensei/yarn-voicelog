@@ -71,10 +71,12 @@ export default function SingleLogPage() {
     try {
       await deleteLog(logId);
       setShowDeleteModal(false);
-      router.push(`/u/${userUuid}`);
+      setToastMessage("Moved to Trash (kept for 7 days)");
+      setTimeout(() => {
+        router.push(`/u/${userUuid}`);
+      }, 1000);
     } catch (err) {
       setToastMessage("Could not delete log. Try again.");
-    } finally {
       setIsDeleting(false);
     }
   };
@@ -337,7 +339,7 @@ export default function SingleLogPage() {
       <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
-        title="Delete this log?"
+        title="Move to Trash?"
         actions={
           <>
             <button
@@ -346,7 +348,7 @@ export default function SingleLogPage() {
               onClick={handleDeleteConfirm}
               className="w-full h-11 rounded-full bg-danger hover:bg-danger/90 text-surface font-subheading text-subheading font-semibold shadow-sm transition-all active:scale-98 flex items-center justify-center"
             >
-              {isDeleting ? "Deleting..." : "Delete log"}
+              {isDeleting ? "Moving to trash..." : "Move to Trash"}
             </button>
             <button
               type="button"
@@ -358,7 +360,7 @@ export default function SingleLogPage() {
           </>
         }
       >
-        <p>This action cannot be undone. The log entry will be permanently removed from your logbook.</p>
+        <p>This log will be moved to the trash and permanently deleted after 7 days.</p>
       </Modal>
 
       <Toast message={toastMessage} isOpen={!!toastMessage} onClose={() => setToastMessage("")} />

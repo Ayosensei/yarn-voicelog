@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS logs (
     processed_output TEXT NOT NULL,  -- Structured SIWES logbook entry
     is_confidential BOOLEAN DEFAULT FALSE,
     audio_file_url TEXT,             -- Supabase Storage link (if uploaded)
+    deleted_at TIMESTAMPTZ,          -- Soft-delete timestamp (purged after 7 days)
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS vocabulary (
 
 -- Indexes for fast query filtering
 CREATE INDEX IF NOT EXISTS idx_logs_user_date ON logs(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_logs_deleted_at ON logs(deleted_at);
 CREATE INDEX IF NOT EXISTS idx_vocab_user ON vocabulary(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_auth_id ON users(auth_user_id);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

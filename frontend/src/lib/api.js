@@ -81,9 +81,17 @@ export async function updateUserProfile(uuid, data) {
 }
 
 // Logbook Services
-export async function getUserLogs(userUuid) {
+export async function getUserLogs(userUuid, options = {}) {
+  const { start_date, end_date, include_deleted, only_deleted } = options;
+  const params = new URLSearchParams();
+  if (start_date) params.append("start_date", start_date);
+  if (end_date) params.append("end_date", end_date);
+  if (include_deleted) params.append("include_deleted", "true");
+  if (only_deleted) params.append("only_deleted", "true");
+
+  const query = params.toString() ? `?${params.toString()}` : "";
   try {
-    return await fetchAPI(`/api/logs/${userUuid}`);
+    return await fetchAPI(`/api/logs/${userUuid}${query}`);
   } catch (e) {
     // Return sample logs for demo/preview
     return [
@@ -100,9 +108,10 @@ export async function getUserLogs(userUuid) {
   }
 }
 
-export async function getSingleLog(logId) {
+export async function getSingleLog(logId, include_deleted = false) {
   try {
-    return await fetchAPI(`/api/logs/single/${logId}`);
+    const query = include_deleted ? "?include_deleted=true" : "";
+    return await fetchAPI(`/api/logs/single/${logId}${query}`);
   } catch (e) {
     return {
       id: logId,
@@ -125,9 +134,18 @@ export async function createLog(logData) {
   }
 }
 
-export async function deleteLog(logId) {
+export async function deleteLog(logId, hard_delete = false) {
   try {
-    return await fetchAPI(`/api/logs/${logId}`, { method: "DELETE" });
+    const query = hard_delete ? "?hard_delete=true" : "";
+    return await fetchAPI(`/api/logs/${logId}${query}`, { method: "DELETE" });
+  } catch (e) {
+    return { success: true };
+  }
+}
+
+export async function restoreLog(logId) {
+  try {
+    return await fetchAPI(`/api/logs/${logId}/restore`, { method: "POST" });
   } catch (e) {
     return { success: true };
   }

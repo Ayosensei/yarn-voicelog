@@ -1,4 +1,4 @@
-﻿"""
+"""
 models.py - Pydantic Schemas (Data Validation)
 
 These are NOT database tables (Femi handles that).
@@ -65,6 +65,7 @@ class LogResponse(BaseModel):
     processed_output: str
     is_confidential: bool = False
     audio_file_url: str | None = None
+    deleted_at: datetime | None = None
     created_at: datetime | None = None
 
 

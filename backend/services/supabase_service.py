@@ -10,6 +10,7 @@ Handles CRUD operations for:
 
 import uuid
 import logging
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 from supabase import create_client, Client
 from config import settings
@@ -149,8 +150,10 @@ def db_get_user_logs(
     user_id: str,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    include_deleted: bool = False,
+    only_deleted: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Retrieve all daily logs for a given user, with optional date filters."""
+    """Retrieve daily logs for a given user, excluding soft-deleted items unless requested."""
     if not is_valid_uuid(user_id):
         return []
 
@@ -158,7 +161,19 @@ def db_get_user_logs(
     if not client:
         raise RuntimeError("Supabase client not available")
 
+    # Purge permanently any trash items older than 7 days
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+        client.table("logs").delete().not_.is_("deleted_at", "null").lt("deleted_at", cutoff).execute()
+    except Exception as e:
+        logger.debug(f"Expired trash cleanup check: {e}")
+
     query = client.table("logs").select("*").eq("user_id", user_id)
+    if only_deleted:
+        query = query.not_.is_("deleted_at", "null")
+    elif not include_deleted:
+        query = query.is_("deleted_at", "null")
+
     if start_date:
         query = query.gte("date", start_date)
     if end_date:
@@ -168,7 +183,7 @@ def db_get_user_logs(
     return res.data or []
 
 
-def db_get_single_log(log_id: str) -> Optional[Dict[str, Any]]:
+def db_get_single_log(log_id: str, include_deleted: bool = False) -> Optional[Dict[str, Any]]:
     """Retrieve a single log entry by its UUID."""
     if not is_valid_uuid(log_id):
         return None
@@ -177,14 +192,18 @@ def db_get_single_log(log_id: str) -> Optional[Dict[str, Any]]:
     if not client:
         raise RuntimeError("Supabase client not available")
 
-    res = client.table("logs").select("*").eq("id", log_id).execute()
+    query = client.table("logs").select("*").eq("id", log_id)
+    if not include_deleted:
+        query = query.is_("deleted_at", "null")
+
+    res = query.execute()
     if res.data and len(res.data) > 0:
         return res.data[0]
     return None
 
 
-def db_delete_log(log_id: str) -> bool:
-    """Delete a log entry by its UUID. Returns True if deleted."""
+def db_delete_log(log_id: str, hard_delete: bool = False) -> bool:
+    """Soft delete a log entry (or hard delete if specified). Returns True if deleted/trashed."""
     if not is_valid_uuid(log_id):
         return False
 
@@ -192,12 +211,49 @@ def db_delete_log(log_id: str) -> bool:
     if not client:
         raise RuntimeError("Supabase client not available")
 
-    existing = db_get_single_log(log_id)
+    existing = db_get_single_log(log_id, include_deleted=True)
     if not existing:
         return False
 
-    res = client.table("logs").delete().eq("id", log_id).execute()
+    if hard_delete:
+        res = client.table("logs").delete().eq("id", log_id).execute()
+    else:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        res = client.table("logs").update({"deleted_at": now_iso}).eq("id", log_id).execute()
     return bool(res.data)
+
+
+def db_restore_log(log_id: str) -> bool:
+    """Restore a soft-deleted log from the trash."""
+    if not is_valid_uuid(log_id):
+        return False
+
+    client = get_supabase_client()
+    if not client:
+        raise RuntimeError("Supabase client not available")
+
+    res = client.table("logs").update({"deleted_at": None}).eq("id", log_id).execute()
+    return bool(res.data)
+
+
+def db_delete_storage_file(file_url: str) -> bool:
+    """Delete an audio file from the voice-memos Supabase Storage bucket."""
+    if not file_url:
+        return False
+
+    client = get_supabase_client()
+    if not client:
+        return False
+
+    try:
+        bucket_name = "voice-memos"
+        if f"/{bucket_name}/" in file_url:
+            path = file_url.split(f"/{bucket_name}/")[-1]
+            client.storage.from_(bucket_name).remove([path])
+            return True
+    except Exception as e:
+        logger.warning(f"Failed to delete storage file {file_url}: {e}")
+    return False
 
 
 # ============================================================

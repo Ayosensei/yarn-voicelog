@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
 import uuid
 import logging
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from models import (
@@ -33,6 +34,8 @@ from services.supabase_service import (
     db_get_user_logs,
     db_get_single_log,
     db_delete_log,
+    db_restore_log,
+    db_delete_storage_file,
     db_create_vocab,
     db_get_user_vocab,
     db_delete_vocab,
@@ -56,12 +59,24 @@ app = FastAPI(
 #  CORS - Allow the frontend to talk to us
 # ============================================================
 
+allowed_origins = [
+    "http://localhost:3000",       # Next.js dev server
+    "http://127.0.0.1:3000",       # Alternative localhost
+]
+
+if settings.frontend_url:
+    allowed_origins.append(settings.frontend_url.rstrip("/"))
+
+if settings.cors_origins:
+    for origin in settings.cors_origins.split(","):
+        cleaned = origin.strip().rstrip("/")
+        if cleaned and cleaned not in allowed_origins:
+            allowed_origins.append(cleaned)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",       # Next.js dev server
-        "http://127.0.0.1:3000",       # Alternative localhost
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https:\/\/.*\.vercel\.app",  # Support all Vercel production & preview domains
     allow_credentials=True,
     allow_methods=["*"],               # Allow GET, POST, PATCH, DELETE
     allow_headers=["*"],               # Allow all headers
@@ -256,27 +271,108 @@ def auth_upsert_user(request_data: dict):
     email = request_data.get("email", "")
     name = request_data.get("name") or (email.split("@")[0] if email else "Student")
     avatar_url = request_data.get("avatar_url")
+    guest_uuid = request_data.get("guest_uuid")
 
     if not auth_user_id:
         raise HTTPException(status_code=400, detail="Missing auth_user_id")
 
     client = get_supabase_client()
     if not client:
-        raise HTTPException(status_code=503, detail="Database unavailable")
+        # In-memory handling for development & testing
+        for uid, u in fake_users_db.items():
+            if u.get("auth_user_id") == auth_user_id:
+                if guest_uuid and guest_uuid in fake_users_db and guest_uuid != uid:
+                    for l in fake_logs_db.values():
+                        if l.get("user_id") == guest_uuid:
+                            l["user_id"] = uid
+                    for v in fake_vocab_db.values():
+                        if v.get("user_id") == guest_uuid:
+                            v["user_id"] = uid
+                    del fake_users_db[guest_uuid]
+                return {
+                    "id": uid,
+                    "name": u["name"],
+                    "field_of_work": u.get("field_of_work"),
+                    "custom_prompt": u.get("custom_prompt"),
+                    "has_own_key": bool(u.get("api_key_encrypted")),
+                    "created_at": u.get("created_at"),
+                }
+
+        # Check if converting guest to auth user
+        if guest_uuid and guest_uuid in fake_users_db:
+            fake_users_db[guest_uuid].update({
+                "auth_user_id": auth_user_id,
+                "email": email,
+                "avatar_url": avatar_url,
+            })
+            u = fake_users_db[guest_uuid]
+            return {
+                "id": guest_uuid,
+                "name": u["name"],
+                "field_of_work": u.get("field_of_work"),
+                "custom_prompt": u.get("custom_prompt"),
+                "has_own_key": bool(u.get("api_key_encrypted")),
+                "created_at": u.get("created_at"),
+            }
+
+        new_id = str(uuid.uuid4())
+        fake_users_db[new_id] = {
+            "id": new_id,
+            "auth_user_id": auth_user_id,
+            "email": email,
+            "name": name,
+            "avatar_url": avatar_url,
+            "created_at": None,
+        }
+        return {
+            "id": new_id,
+            "name": name,
+            "field_of_work": None,
+            "custom_prompt": None,
+            "has_own_key": False,
+            "created_at": None,
+        }
 
     try:
         # Try to find existing user by auth_user_id
         existing = client.table("users").select("*").eq("auth_user_id", auth_user_id).maybe_single().execute()
         if existing.data:
             user = existing.data
+            user_id = str(user["id"])
+            # Merge guest data into existing account if guest_uuid provided
+            if guest_uuid and is_valid_uuid(guest_uuid) and guest_uuid != user_id:
+                client.table("logs").update({"user_id": user_id}).eq("user_id", guest_uuid).execute()
+                client.table("vocabulary").update({"user_id": user_id}).eq("user_id", guest_uuid).execute()
+                client.table("users").delete().eq("id", guest_uuid).execute()
             return {
-                "id": str(user["id"]),
+                "id": user_id,
                 "name": user["name"],
                 "field_of_work": user.get("field_of_work"),
                 "custom_prompt": user.get("custom_prompt"),
                 "has_own_key": bool(user.get("api_key_encrypted")),
                 "created_at": user.get("created_at"),
             }
+
+        # If user has a guest record that has not yet been linked to Google auth:
+        if guest_uuid and is_valid_uuid(guest_uuid):
+            guest = client.table("users").select("*").eq("id", guest_uuid).maybe_single().execute()
+            if guest.data and not guest.data.get("auth_user_id"):
+                updated = client.table("users").update({
+                    "auth_user_id": auth_user_id,
+                    "email": email or guest.data.get("email"),
+                    "name": name or guest.data.get("name"),
+                    "avatar_url": avatar_url or guest.data.get("avatar_url"),
+                }).eq("id", guest_uuid).execute()
+                if updated.data and len(updated.data) > 0:
+                    user = updated.data[0]
+                    return {
+                        "id": str(user["id"]),
+                        "name": user["name"],
+                        "field_of_work": user.get("field_of_work"),
+                        "custom_prompt": user.get("custom_prompt"),
+                        "has_own_key": bool(user.get("api_key_encrypted")),
+                        "created_at": user.get("created_at"),
+                    }
 
         # First login — create new record
         new_user = client.table("users").insert({
@@ -336,7 +432,11 @@ def get_user_by_auth_id(auth_user_id: str):
 
 @app.post("/api/logs", response_model=LogResponse)
 def create_log(log: LogCreate):
-    """Save a new logbook entry."""
+    """Save a new logbook entry. Deletes audio from storage after processing to preserve free tier limits."""
+    # Audio cleanup in accordance with storage lifecycle policy
+    if log.audio_file_url:
+        db_delete_storage_file(log.audio_file_url)
+
     client = get_supabase_client()
     if client and is_valid_uuid(log.user_id):
         try:
@@ -346,7 +446,7 @@ def create_log(log: LogCreate):
                 processed_output=log.processed_output,
                 raw_transcript=log.raw_transcript,
                 is_confidential=log.is_confidential,
-                audio_file_url=log.audio_file_url,
+                audio_file_url=None,  # Not retained in storage
             )
             lid = str(created["id"])
             fake_logs_db[lid] = created
@@ -357,7 +457,8 @@ def create_log(log: LogCreate):
                 "raw_transcript": created.get("raw_transcript"),
                 "processed_output": created["processed_output"],
                 "is_confidential": created.get("is_confidential", False),
-                "audio_file_url": created.get("audio_file_url"),
+                "audio_file_url": None,
+                "deleted_at": created.get("deleted_at"),
                 "created_at": created.get("created_at"),
             }
         except Exception as e:
@@ -372,7 +473,8 @@ def create_log(log: LogCreate):
         "raw_transcript": None if log.is_confidential else log.raw_transcript,
         "processed_output": log.processed_output,
         "is_confidential": log.is_confidential,
-        "audio_file_url": log.audio_file_url,
+        "audio_file_url": None,
+        "deleted_at": None,
         "created_at": None,
     }
     fake_logs_db[log_id] = new_log
@@ -380,12 +482,24 @@ def create_log(log: LogCreate):
 
 
 @app.get("/api/logs/{user_uuid}")
-def get_user_logs(user_uuid: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
-    """Get all logs for a student, optionally filtered by date range."""
+def get_user_logs(
+    user_uuid: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    include_deleted: bool = False,
+    only_deleted: bool = False,
+):
+    """Get logs for a student. Excludes trashed logs by default and purges expired (>7 days) trash."""
     client = get_supabase_client()
     if client and is_valid_uuid(user_uuid):
         try:
-            logs = db_get_user_logs(user_uuid, start_date=start_date, end_date=end_date)
+            logs = db_get_user_logs(
+                user_uuid,
+                start_date=start_date,
+                end_date=end_date,
+                include_deleted=include_deleted,
+                only_deleted=only_deleted,
+            )
             return [
                 {
                     "id": str(l["id"]),
@@ -395,6 +509,7 @@ def get_user_logs(user_uuid: str, start_date: Optional[str] = None, end_date: Op
                     "processed_output": l["processed_output"],
                     "is_confidential": l.get("is_confidential", False),
                     "audio_file_url": l.get("audio_file_url"),
+                    "deleted_at": l.get("deleted_at"),
                     "created_at": l.get("created_at"),
                 }
                 for l in logs
@@ -402,11 +517,27 @@ def get_user_logs(user_uuid: str, start_date: Optional[str] = None, end_date: Op
         except Exception as e:
             logger.error(f"Error retrieving logs from Supabase: {e}")
 
-    # Fallback in-memory
+    # Fallback in-memory: purge >7 day trash
+    now_utc = datetime.now(timezone.utc)
+    for k in list(fake_logs_db.keys()):
+        d_at = fake_logs_db[k].get("deleted_at")
+        if d_at:
+            try:
+                dt = datetime.fromisoformat(d_at) if isinstance(d_at, str) else d_at
+                if (now_utc - dt) > timedelta(days=7):
+                    del fake_logs_db[k]
+            except Exception:
+                pass
+
     user_logs = [
         log for log in fake_logs_db.values()
         if log.get("user_id") == user_uuid
     ]
+    if only_deleted:
+        user_logs = [l for l in user_logs if l.get("deleted_at")]
+    elif not include_deleted:
+        user_logs = [l for l in user_logs if not l.get("deleted_at")]
+
     if start_date:
         user_logs = [l for l in user_logs if l["date"] >= start_date]
     if end_date:
@@ -415,12 +546,12 @@ def get_user_logs(user_uuid: str, start_date: Optional[str] = None, end_date: Op
 
 
 @app.get("/api/logs/single/{log_id}", response_model=LogResponse)
-def get_single_log(log_id: str):
+def get_single_log(log_id: str, include_deleted: bool = False):
     """Get a single log entry by its ID."""
     client = get_supabase_client()
     if client and is_valid_uuid(log_id):
         try:
-            log = db_get_single_log(log_id)
+            log = db_get_single_log(log_id, include_deleted=include_deleted)
             if log:
                 return {
                     "id": str(log["id"]),
@@ -430,6 +561,7 @@ def get_single_log(log_id: str):
                     "processed_output": log["processed_output"],
                     "is_confidential": log.get("is_confidential", False),
                     "audio_file_url": log.get("audio_file_url"),
+                    "deleted_at": log.get("deleted_at"),
                     "created_at": log.get("created_at"),
                 }
         except Exception as e:
@@ -438,27 +570,56 @@ def get_single_log(log_id: str):
     # Fallback in-memory
     if log_id not in fake_logs_db:
         raise HTTPException(status_code=404, detail="Log not found")
-    return fake_logs_db[log_id]
+
+    log = fake_logs_db[log_id]
+    if not include_deleted and log.get("deleted_at"):
+        raise HTTPException(status_code=404, detail="Log not found (in trash)")
+    return log
 
 
 @app.delete("/api/logs/{log_id}")
-def delete_log(log_id: str):
-    """Delete a log entry."""
+def delete_log(log_id: str, hard_delete: bool = False):
+    """Soft delete a log entry (moved to trash for 7 days), or hard delete permanently."""
     client = get_supabase_client()
     deleted = False
     if client and is_valid_uuid(log_id):
         try:
-            deleted = db_delete_log(log_id)
+            deleted = db_delete_log(log_id, hard_delete=hard_delete)
         except Exception as e:
             logger.error(f"Error deleting log from Supabase: {e}")
 
     if log_id in fake_logs_db:
-        del fake_logs_db[log_id]
+        if hard_delete:
+            del fake_logs_db[log_id]
+        else:
+            fake_logs_db[log_id]["deleted_at"] = datetime.now(timezone.utc).isoformat()
         deleted = True
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Log not found")
-    return {"success": True, "message": "Log deleted"}
+    msg = "Log permanently deleted" if hard_delete else "Log moved to trash"
+    return {"success": True, "message": msg}
+
+
+@app.post("/api/logs/{log_id}/restore")
+def restore_log(log_id: str):
+    """Restore a log entry from the trash."""
+    client = get_supabase_client()
+    restored = False
+    if client and is_valid_uuid(log_id):
+        try:
+            restored = db_restore_log(log_id)
+        except Exception as e:
+            logger.error(f"Error restoring log from Supabase: {e}")
+
+    if log_id in fake_logs_db:
+        if fake_logs_db[log_id].get("deleted_at"):
+            fake_logs_db[log_id]["deleted_at"] = None
+            restored = True
+
+    if not restored:
+        raise HTTPException(status_code=404, detail="Log not found or not in trash")
+    return {"success": True, "message": "Log restored from trash"}
 
 
 # ============================================================

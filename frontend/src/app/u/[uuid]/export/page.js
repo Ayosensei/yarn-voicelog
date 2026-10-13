@@ -137,6 +137,120 @@ export default function ExportPage() {
     }
   };
 
+  const [showPreview, setShowPreview] = useState(false);
+
+  const selectedLogs = useMemo(() => {
+    return logs
+      .filter((l) => selectedIds.includes(l.id))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }, [logs, selectedIds]);
+
+  // Helper: Convert markdown text into styled HTML elements
+  const formatMarkdownToHtml = (text) => {
+    if (!text) return "";
+    return text
+      .split("\n")
+      .map((line) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("### ")) {
+          return `<h3 style="font-size: 13pt; color: #333; margin-top: 10px; margin-bottom: 4px; font-weight: 600;">${trimmed.slice(4)}</h3>`;
+        }
+        if (trimmed.startsWith("## ")) {
+          return `<h2 style="font-size: 14pt; color: #111; margin-top: 14px; margin-bottom: 6px; font-weight: bold;">${trimmed.slice(3)}</h2>`;
+        }
+        if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+          return `<li style="margin-left: 20px; margin-bottom: 3px; font-size: 11pt;">${trimmed.slice(2)}</li>`;
+        }
+        if (!trimmed) {
+          return `<div style="height: 6px;"></div>`;
+        }
+        const withBold = trimmed.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+        return `<p style="margin: 3px 0; font-size: 11pt; line-height: 1.5;">${withBold}</p>`;
+      })
+      .join("");
+  };
+
+  // Build full HTML document for Word / PDF Print
+  const buildHtmlDocument = (selectedLogs) => {
+    const studentName = user?.name || "Student";
+    const field = user?.field_of_work || "General Fieldwork";
+
+    let coverHtml = "";
+    if (includeCoverPage) {
+      coverHtml = `
+        <div style="padding: 24px 0; border-bottom: 2px solid #4F46E5; margin-bottom: 24px;">
+          <h1 style="font-size: 20pt; color: #111; margin: 0 0 8px 0; font-family: Montserrat, sans-serif; letter-spacing: -0.02em;">Yarn • Daily Logbook Notes</h1>
+          <p style="font-size: 12pt; color: #4B5563; margin: 0 0 16px 0;">Student Industrial Work Experience Scheme (SIWES)</p>
+          <table style="width: 100%; border-collapse: collapse; font-size: 11pt; margin-top: 12px;">
+            <tr>
+              <td style="padding: 6px 12px; background: #F3F4F6; width: 140px; font-weight: 600; border: 1px solid #E5E7EB;">Student Name:</td>
+              <td style="padding: 6px 12px; border: 1px solid #E5E7EB;">${studentName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 12px; background: #F3F4F6; font-weight: 600; border: 1px solid #E5E7EB;">Field of Work:</td>
+              <td style="padding: 6px 12px; border: 1px solid #E5E7EB;">${field}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 12px; background: #F3F4F6; font-weight: 600; border: 1px solid #E5E7EB;">Date Range:</td>
+              <td style="padding: 6px 12px; border: 1px solid #E5E7EB;">${fromDate} to ${toDate}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 12px; background: #F3F4F6; font-weight: 600; border: 1px solid #E5E7EB;">Total Entries:</td>
+              <td style="padding: 6px 12px; border: 1px solid #E5E7EB;">${selectedLogs.length} entries compiled</td>
+            </tr>
+          </table>
+        </div>
+      `;
+    }
+
+    const entriesHtml = selectedLogs
+      .map((l, idx) => {
+        const title = numberEntries
+          ? `Day ${idx + 1} • ${formatShortDate(l.date)} (${l.date})`
+          : `${formatShortDate(l.date)} (${l.date})`;
+
+        return `
+          <div style="margin-bottom: 24px; padding: 16px; border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF; page-break-inside: avoid;">
+            <div style="border-bottom: 1px solid #EEF2FF; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 13pt; font-weight: 600; color: #4F46E5;">${title}</span>
+            </div>
+            <div style="font-size: 11pt; color: #1F2937; line-height: 1.6;">
+              ${formatMarkdownToHtml(l.processed_output)}
+            </div>
+            <div style="margin-top: 14px; padding-top: 8px; border-top: 1px dashed #D1D5DB; font-size: 10pt; color: #6B7280; display: flex; justify-content: space-between;">
+              <span>Industry Supervisor Remarks: _______________________</span>
+              <span>Signature & Date: ______________</span>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Yarn Logbook - ${studentName}</title>
+        <style>
+          @page { size: A4; margin: 18mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #111827; background: #fff; margin: 0; padding: 20px; }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        ${coverHtml}
+        <div>
+          ${entriesHtml}
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
   // Download Trigger
   const handleDownload = () => {
     if (selectedCount === 0) {
@@ -146,48 +260,69 @@ export default function ExportPage() {
 
     setExporting(true);
 
-    setTimeout(() => {
-      const selectedLogs = logs
-        .filter((l) => selectedIds.includes(l.id))
-        .sort((a, b) => a.date.localeCompare(b.date));
+    const selectedLogs = logs
+      .filter((l) => selectedIds.includes(l.id))
+      .sort((a, b) => a.date.localeCompare(b.date));
 
-      let docContent = "";
+    const htmlContent = buildHtmlDocument(selectedLogs);
 
-      if (includeCoverPage) {
-        docContent += `====================================================\n`;
-        docContent += `              SIWES INDUSTRIAL LOGBOOK             \n`;
-        docContent += `====================================================\n\n`;
-        docContent += `Student Name:    ${user?.name || "Student"}\n`;
-        docContent += `Field of Work:   ${user?.field_of_work || "Engineering / Industrial Attachment"}\n`;
-        docContent += `Reporting Range: ${fromDate} to ${toDate}\n`;
-        docContent += `Total Entries:   ${selectedCount}\n\n`;
-        docContent += `====================================================\n\n\n`;
+    if (format === "pdf") {
+      // PDF Export via native browser print engine (with clean print-to-PDF styles)
+      try {
+        const printFrame = document.createElement("iframe");
+        printFrame.style.position = "fixed";
+        printFrame.style.right = "0";
+        printFrame.style.bottom = "0";
+        printFrame.style.width = "0";
+        printFrame.style.height = "0";
+        printFrame.style.border = "0";
+        document.body.appendChild(printFrame);
+
+        const frameDoc = printFrame.contentWindow.document;
+        frameDoc.open();
+        frameDoc.write(htmlContent);
+        frameDoc.close();
+
+        setTimeout(() => {
+          printFrame.contentWindow.focus();
+          printFrame.contentWindow.print();
+          setTimeout(() => {
+            if (document.body.contains(printFrame)) {
+              document.body.removeChild(printFrame);
+            }
+          }, 2000);
+          setExporting(false);
+          setToastMessage(`Prepared PDF with ${selectedCount} logs!`);
+        }, 500);
+      } catch (err) {
+        console.error("PDF print error:", err);
+        setExporting(false);
+        setToastMessage("Could not open print dialog. Try Word (.docx) export.");
       }
+    } else {
+      // Word (.docx / .doc) Export via formatted Word HTML Blob
+      setTimeout(() => {
+        try {
+          const blob = new Blob([htmlContent], { type: "application/msword;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          const cleanDate = new Date().toISOString().split("T")[0];
+          link.download = `Yarn_SIWES_Logbook_${cleanDate}.doc`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
 
-      selectedLogs.forEach((l, idx) => {
-        if (numberEntries) {
-          docContent += `[ENTRY DAY ${idx + 1}] - ${formatShortDate(l.date)} (${l.date})\n`;
-        } else {
-          docContent += `[${formatShortDate(l.date)}] (${l.date})\n`;
+          setExporting(false);
+          setToastMessage(`Exported ${selectedCount} logs as Word document!`);
+        } catch (err) {
+          console.error("Word export error:", err);
+          setExporting(false);
+          setToastMessage("Failed to export Word document.");
         }
-        docContent += `----------------------------------------------------\n\n`;
-        docContent += `${l.processed_output}\n\n\n`;
-      });
-
-      const fileExtension = format === "docx" ? "docx" : "pdf";
-      const blob = new Blob([docContent], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Yarn_SIWES_Logbook_${new Date().toISOString().split("T")[0]}.${fileExtension}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      setExporting(false);
-      setToastMessage(`Exported ${selectedCount} logs as ${format.toUpperCase()}!`);
-    }, 1000);
+      }, 500);
+    }
   };
 
   if (loading) {
@@ -482,6 +617,41 @@ export default function ExportPage() {
                 </button>
               </label>
             </div>
+          </section>
+
+          {/* Section 5: Document Preview */}
+          <section className="bg-surface rounded-xl shadow-sm border border-border p-5 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="font-overline text-overline text-ink-600 uppercase tracking-wider font-semibold">
+                DOCUMENT PREVIEW
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowPreview(!showPreview)}
+                className="font-small text-small text-accent-600 hover:text-accent-700 font-semibold cursor-pointer"
+              >
+                {showPreview ? "Hide preview" : "Show preview"}
+              </button>
+            </div>
+
+            {showPreview && (
+              <div className="p-4 bg-surface-muted rounded-xl border border-border max-h-96 overflow-y-auto text-ink-900 space-y-4">
+                {selectedLogs.length > 0 ? (
+                  selectedLogs.map((l, idx) => (
+                    <div key={l.id} className="p-3.5 bg-surface rounded-lg border border-border">
+                      <div className="font-subheading text-small font-semibold text-accent-700 pb-1.5 border-b border-border/60 mb-2">
+                        {numberEntries ? `Day ${idx + 1} • ` : ""}{formatShortDate(l.date)} ({l.date})
+                      </div>
+                      <div className="whitespace-pre-line text-ink-900 text-xs leading-relaxed">
+                        {l.processed_output}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-ink-600 text-xs">No entries selected to preview.</p>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Summary Banner */}

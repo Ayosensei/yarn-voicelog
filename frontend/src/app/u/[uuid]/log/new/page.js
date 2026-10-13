@@ -26,17 +26,18 @@ export default function NewLogPage() {
 
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
+  const isRecordingRef = useRef(false); // stable ref so onend closure always reads latest value
 
-  // Web Speech API Initialization
+  // Web Speech API Initialization — runs ONCE on mount
   useEffect(() => {
     if (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = "en-US";
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
 
-      recognitionRef.current.onresult = (event) => {
+      recognition.onresult = (event) => {
         let currentTranscript = "";
         for (let i = 0; i < event.results.length; i++) {
           currentTranscript += event.results[i][0].transcript + " ";
@@ -44,7 +45,7 @@ export default function NewLogPage() {
         setTranscript(currentTranscript.trim());
       };
 
-      recognitionRef.current.onerror = (event) => {
+      recognition.onerror = (event) => {
         console.warn("Speech recognition error:", event.error);
         if (event.error === "not-allowed") {
           setRecordingState("denied");
@@ -52,17 +53,19 @@ export default function NewLogPage() {
         }
       };
 
-      recognitionRef.current.onend = () => {
-        if (isRecording) {
-          try {
-            recognitionRef.current.start();
-          } catch (e) {}
+      // Use ref (not closure) so this always reads the live recording state
+      recognition.onend = () => {
+        if (isRecordingRef.current) {
+          try { recognition.start(); } catch (e) {}
         }
       };
+
+      recognitionRef.current = recognition;
     } else {
       setRecordingState("denied");
     }
-  }, [isRecording]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← no deps: init once only
 
   // Timer logic
   useEffect(() => {
@@ -86,13 +89,12 @@ export default function NewLogPage() {
     if (!isRecording) {
       try {
         recognitionRef.current?.start();
-        setIsRecording(true);
-        setRecordingState("recording");
-      } catch (e) {
-        setIsRecording(true);
-        setRecordingState("recording");
-      }
+      } catch (e) {}
+      isRecordingRef.current = true;
+      setIsRecording(true);
+      setRecordingState("recording");
     } else {
+      isRecordingRef.current = false;
       try {
         recognitionRef.current?.stop();
       } catch (e) {}
@@ -113,7 +115,10 @@ export default function NewLogPage() {
     const file = e.target.files[0];
     if (file) {
       setAudioFile(file);
-      setToastMessage(`Voice file "${file.name}" attached.`);
+      // Clear any previous speech transcript and show a placeholder so the
+      // Generate button becomes enabled (actual transcription happens server-side)
+      setTranscript("");
+      setToastMessage(`Voice file "${file.name}" attached. Tap Generate to transcribe and build your log entry.`);
     }
   };
 
@@ -133,6 +138,10 @@ export default function NewLogPage() {
         audio_file: audioFile,
       });
 
+      if (!response || !response.processed_text) {
+        throw new Error(response?.detail || "No processed text returned from AI.");
+      }
+
       const newLog = await createLog({
         user_id: userUuid,
         date: date,
@@ -143,7 +152,8 @@ export default function NewLogPage() {
 
       router.push(`/u/${userUuid}/log/${newLog.id}`);
     } catch (err) {
-      setToastMessage("Generation failed. Your words are safe. Please try again.");
+      console.error("[Generate Log Error]", err);
+      setToastMessage(err.message || "Generation failed. Your words are safe. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -323,6 +333,7 @@ export default function NewLogPage() {
             onClick={handleGenerateLog}
             disabled={isProcessing || (!transcript.trim() && !audioFile)}
             className="flex-1 h-12 rounded-full bg-accent-600 hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-surface font-subheading text-subheading shadow-[0_2px_8px_rgba(79,70,229,0.25)] active:scale-98 transition-all flex items-center justify-center gap-2 px-5"
+            aria-label={audioFile && !transcript.trim() ? `Transcribe ${audioFile.name} and generate log` : "Generate logbook entry"}
           >
             {isProcessing ? (
               <RefreshCw size={20} className="animate-spin" />

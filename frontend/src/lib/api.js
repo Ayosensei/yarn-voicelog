@@ -146,6 +146,10 @@ export async function processVoiceInput({ user_uuid, transcript, audio_file, use
         method: "POST",
         body: formData,
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || `Audio processing failed: ${res.status}`);
+      }
       return await res.json();
     } else {
       return await fetchAPI("/api/process-voice", {

@@ -273,7 +273,7 @@ export default function SingleLogPage() {
               {showTranscript && (
                 <div className="mt-space-md pt-space-md border-t border-border animate-in fade-in duration-150">
                   <p className="font-reading text-reading text-ink-600 italic bg-surface-muted/60 p-space-md rounded-lg leading-relaxed">
-                    "{log.raw_transcript || "Transcript unavailable."}"
+                    &ldquo;{log.raw_transcript || "Transcript unavailable."}&rdquo;
                   </p>
                   <div className="flex items-center justify-between mt-space-sm text-ink-600 font-caption text-caption">
                     <span>Captured via Voice Logger</span>

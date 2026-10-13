@@ -14,6 +14,9 @@ export const metadata = {
     icon: "/Logo-standalone-svg.svg",
     apple: "/Logo-standalone-png.png",
   },
+  verification: {
+    google: "wCLd5DBp240wzRU9bkXucfxU9jO7YzZsZg5DTTyiLIE",
+  },
 };
 
 export const viewport = {

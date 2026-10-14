@@ -37,6 +37,7 @@ import {
   Sliders,
   Sparkles,
   Sun,
+  Languages,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 

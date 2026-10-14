@@ -85,8 +85,9 @@ export default function WeeklyTimeline({ logs = [], userUuid, trainingType = "si
   const calculateStreak = () => {
     if (!logs.length) return 0;
     const sortedDates = Array.from(new Set(logs.map((l) => l.date))).sort().reverse();
-    const today = new Date().toISOString().split("T")[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    const todayObj = new Date();
+    const today = todayObj.toISOString().split("T")[0];
+    const yesterday = new Date(todayObj.getTime() - 86400000).toISOString().split("T")[0];
 
     if (!sortedDates.includes(today) && !sortedDates.includes(yesterday)) {
       return 0;

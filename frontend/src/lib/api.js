@@ -1,7 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Helper for HTTP requests with automatic retry for server cold-starts (503 / 502 / network sleep)
-async function fetchAPI(endpoint, options = {}, retries = 2) {
+async function fetchAPI(endpoint, options = {}, retries = 4, delay = 2500) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
     "Content-Type": "application/json",
@@ -12,9 +12,9 @@ async function fetchAPI(endpoint, options = {}, retries = 2) {
     const res = await fetch(url, { ...options, headers });
     if (!res.ok) {
       if ((res.status === 503 || res.status === 502) && retries > 0) {
-        // Backend service is cold starting on Render: wait 2.5s and retry
-        await new Promise((r) => setTimeout(r, 2500));
-        return await fetchAPI(endpoint, options, retries - 1);
+        // Backend service is cold starting on Render: wait with incremental backoff and retry
+        await new Promise((r) => setTimeout(r, delay));
+        return await fetchAPI(endpoint, options, retries - 1, delay + 1000);
       }
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.detail || `API error: ${res.status}`);
@@ -22,8 +22,8 @@ async function fetchAPI(endpoint, options = {}, retries = 2) {
     return await res.json();
   } catch (err) {
     if (retries > 0 && (err.message.includes("Failed to fetch") || err.message.includes("NetworkError"))) {
-      await new Promise((r) => setTimeout(r, 2500));
-      return await fetchAPI(endpoint, options, retries - 1);
+      await new Promise((r) => setTimeout(r, delay));
+      return await fetchAPI(endpoint, options, retries - 1, delay + 1000);
     }
     console.warn(`[API Call Failed: ${endpoint}]`, err.message);
     throw err;

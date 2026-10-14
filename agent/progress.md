@@ -11,12 +11,13 @@
 - Resolved Vercel 500 MIDDLEWARE_INVOCATION_FAILED error: added environment variable guards and try/catch block to `frontend/src/middleware.js`.
 
 - Slice 5: Backend & AI Engine for SWEP, SIWES, and IT program tiers with customizable line length constraints and 15 passing tests (commit `d001ff1`).
-- Slice 6: Frontend Settings (Program selector & line length tweaker), New Log dynamic tier selector & line override bar, Dashboard badge, and API layer updates. Verified with `npm run build`.
+- Slice 6: Frontend Settings (Program selector & line length tweaker), New Log dynamic tier selector & line override bar, Dashboard badge, and API layer updates. Verified with `npm run build` (commit `944f2d5`).
+- Pushed all commits to GitHub `origin/main` (`6e8907b..944f2d5`).
 
 ### Current
-- Committing frontend changes to git
+- Deployed to GitHub `origin/main` (triggers Vercel & Render builds)
 
 ### Next
-- Push commits to GitHub origin/main when network DNS is clear
-- Mobile & UI testing of program switching on physical devices
+- Test live generation across SWEP, SIWES, and IT on mobile / web
+- Collect student feedback on physical logbook fit
 

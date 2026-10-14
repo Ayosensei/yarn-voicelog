@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getUserProfile, updateUserProfile } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 import {
   FACULTIES_AND_DEPARTMENTS,
   ALL_FACULTIES,
@@ -22,6 +23,7 @@ import {
   AlignLeft,
   Languages,
   MessageSquare,
+  LogOut,
 } from "lucide-react";
 
 const PROGRAM_OPTIONS = [
@@ -121,11 +123,17 @@ export default function OnboardingPage() {
   const [fieldOfWork, setFieldOfWork] = useState("");
   const [customLines, setCustomLines] = useState("");
   const [isCustomLineMode, setIsCustomLineMode] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     async function loadInitialData() {
       if (!userUuid) return;
       try {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data: { user } }) => {
+          if (user?.email) setUserEmail(user.email);
+        });
+
         const user = await getUserProfile(userUuid);
         if (user) {
           if (user.name) setName(user.name);
@@ -207,6 +215,20 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("yarn_guest_uuid");
+        document.cookie = "yarn_guest_uuid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+      router.replace("/");
+    } catch (e) {
+      router.replace("/");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e?.preventDefault();
     if (!name.trim()) return;
@@ -236,10 +258,17 @@ export default function OnboardingPage() {
         is_onboarded: true,
       });
 
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`yarn_onboarded_${userUuid}`, "true");
+      }
+
       router.replace(`/u/${userUuid}`);
     } catch (err) {
       console.error("Onboarding submission failed:", err);
-      setSubmitting(false);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`yarn_onboarded_${userUuid}`, "true");
+      }
+      router.replace(`/u/${userUuid}`);
     }
   };
 
@@ -249,8 +278,14 @@ export default function OnboardingPage() {
       await updateUserProfile(userUuid, {
         is_onboarded: true,
       });
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`yarn_onboarded_${userUuid}`, "true");
+      }
       router.replace(`/u/${userUuid}`);
     } catch (err) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`yarn_onboarded_${userUuid}`, "true");
+      }
       router.replace(`/u/${userUuid}`);
     }
   };
@@ -284,9 +319,26 @@ export default function OnboardingPage() {
                 yarn
               </span>
             </div>
-            <span className="text-caption font-caption-medium px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
-              Student setup
-            </span>
+            <div className="flex items-center gap-2">
+              {userEmail && (
+                <span className="text-caption text-ink-500 font-caption hidden sm:inline">
+                  {userEmail}
+                </span>
+              )}
+              <span className="text-caption font-caption-medium px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
+                Student setup
+              </span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                aria-label="Sign out"
+                title="Sign out of Google"
+                className="inline-flex items-center gap-1 text-[12px] font-caption text-ink-500 hover:text-ink-900 px-2 py-1 rounded-lg border border-border hover:bg-surface-muted transition-colors"
+              >
+                <LogOut size={13} />
+                <span>Sign out</span>
+              </button>
+            </div>
           </div>
           <h1 className="font-title text-title font-semibold text-ink-900 tracking-tight mt-2">
             Tailor Yarn to your logbook

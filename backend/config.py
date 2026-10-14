@@ -9,6 +9,11 @@ we read them from the .env file.
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+from pathlib import Path
+
+_env_path = Path(__file__).resolve().parent / ".env"
+
+
 class Settings(BaseSettings):
     """
     Each variable here maps to a line in the .env file.
@@ -33,7 +38,7 @@ class Settings(BaseSettings):
     cors_origins: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(_env_path, ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

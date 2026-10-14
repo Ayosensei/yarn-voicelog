@@ -77,6 +77,8 @@ function LandingContent() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const [yarnUser, setYarnUser] = useState(null);
   const [error, setError] = useState(searchParams.get("message") || "");
   const [isGuestOpen, setIsGuestOpen] = useState(false);
   const [guestName, setGuestName] = useState("");
@@ -96,29 +98,51 @@ function LandingContent() {
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsCheckingSession(false);
       if (user) {
-        // Fetch their Yarn UUID from backend then redirect
+        setAuthenticatedUser(user);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        // Fetch their Yarn UUID from backend
         fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/users/by-auth/${user.id}`
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/users/by-auth/${user.id}`,
+          { signal: controller.signal }
         )
           .then((r) => (r.ok ? r.json() : null))
-          .then((yarnUser) => {
-            if (yarnUser?.id) {
-              if (yarnUser.is_onboarded === false) {
-                router.replace(`/u/${yarnUser.id}/onboarding`);
-              } else {
-                router.replace(`/u/${yarnUser.id}`);
-              }
-            } else {
-              setIsCheckingSession(false);
+          .then((yUser) => {
+            if (yUser?.id) {
+              setYarnUser(yUser);
             }
           })
-          .catch(() => setIsCheckingSession(false));
-      } else {
-        setIsCheckingSession(false);
+          .catch((err) => {
+            console.warn("Could not fetch user by auth id:", err);
+          })
+          .finally(() => {
+            clearTimeout(timeoutId);
+          });
       }
     });
   }, [router]);
+
+  const handleSignOut = async () => {
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      setAuthenticatedUser(null);
+      setYarnUser(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("yarn_guest_uuid");
+        document.cookie = "yarn_guest_uuid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
+    } catch (err) {
+      console.warn("Sign out error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
@@ -176,13 +200,6 @@ function LandingContent() {
     }
   };
 
-  if (isCheckingSession) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 rounded-full border-[3px] border-accent-600/20 border-t-accent-600 animate-spin" />
-      </div>
-    );
-  }
 
   const currentDemo = DEMO_PREVIEWS[activeDemoTier];
 
@@ -385,26 +402,106 @@ function LandingContent() {
               </div>
             )}
 
-            {/* Google Sign-In Button */}
-            <button
-              id="google-signin-btn"
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isLoading}
-              className="w-full h-[52px] rounded-xl bg-surface border-2 border-border-strong hover:border-accent-600 hover:bg-accent-50/40 active:scale-[0.99] text-ink-900 font-subheading text-subheading font-semibold transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw size={20} className="animate-spin text-accent-600" />
-                  <span>Redirecting to Google…</span>
-                </>
-              ) : (
-                <>
-                  <GoogleIcon />
-                  <span>Continue with Google</span>
-                </>
-              )}
-            </button>
+            {/* Active Account Status or Sign-In Button */}
+            {authenticatedUser ? (
+              <div className="flex flex-col gap-3.5 p-4 rounded-xl bg-accent-50/50 border border-accent-200">
+                <div className="flex items-center gap-3">
+                  {authenticatedUser.user_metadata?.avatar_url ? (
+                    <img
+                      src={authenticatedUser.user_metadata.avatar_url}
+                      alt={authenticatedUser.user_metadata.full_name || "User"}
+                      className="w-10 h-10 rounded-full border border-accent-300 shrink-0 object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-accent-600 text-surface flex items-center justify-center font-semibold text-small shrink-0">
+                      {(authenticatedUser.user_metadata?.full_name || authenticatedUser.email || "U")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-subheading text-subheading font-semibold text-ink-900 truncate">
+                      {authenticatedUser.user_metadata?.full_name || "Student"}
+                    </span>
+                    <span className="font-caption text-caption text-ink-600 truncate">
+                      {authenticatedUser.email}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (yarnUser?.id) {
+                        const isLocallyOnboarded =
+                          typeof window !== "undefined" &&
+                          localStorage.getItem(`yarn_onboarded_${yarnUser.id}`) === "true";
+                        if (yarnUser.is_onboarded === false && !isLocallyOnboarded) {
+                          router.push(`/u/${yarnUser.id}/onboarding`);
+                        } else {
+                          router.push(`/u/${yarnUser.id}`);
+                        }
+                      } else {
+                        setIsLoading(true);
+                        fetch(
+                          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/users/by-auth/${authenticatedUser.id}`
+                        )
+                          .then((r) => r.json())
+                          .then((u) => {
+                            if (u?.id) {
+                              if (u.is_onboarded === false) router.push(`/u/${u.id}/onboarding`);
+                              else router.push(`/u/${u.id}`);
+                            }
+                          })
+                          .catch(() => router.push("/"))
+                          .finally(() => setIsLoading(false));
+                      }
+                    }}
+                    disabled={isLoading}
+                    className="w-full sm:flex-1 h-11 rounded-xl bg-accent-600 hover:bg-accent-700 active:scale-[0.99] text-surface font-small-medium text-small flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw size={16} className="animate-spin" />
+                        <span>Opening logbook…</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Continue to your Logbook</span>
+                        <ArrowRight size={16} />
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="w-full sm:w-auto h-11 px-4 rounded-xl border border-border-strong hover:bg-surface-muted active:scale-[0.99] text-ink-700 font-small text-small transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                id="google-signin-btn"
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="w-full h-[52px] rounded-xl bg-surface border-2 border-border-strong hover:border-accent-600 hover:bg-accent-50/40 active:scale-[0.99] text-ink-900 font-subheading text-subheading font-semibold transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw size={20} className="animate-spin text-accent-600" />
+                    <span>Redirecting to Google…</span>
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon />
+                    <span>Continue with Google</span>
+                  </>
+                )}
+              </button>
+            )}
 
             {/* Resume existing guest session if present */}
             {savedGuestUuid && (

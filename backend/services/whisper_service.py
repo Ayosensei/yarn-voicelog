@@ -1,4 +1,4 @@
-﻿"""
+"""
 whisper_service.py - Transcribes audio recordings to text
 
 Used as an audio fallback when students upload a recorded audio file
@@ -17,7 +17,7 @@ def transcribe_audio(audio_file_bytes: bytes, filename: str = "audio.wav") -> st
     """
     api_key = settings.openai_api_key.strip() if settings.openai_api_key else ""
 
-    if api_key:
+    if api_key and not api_key.startswith("your-"):
         try:
             from openai import OpenAI
             client = OpenAI(api_key=api_key)

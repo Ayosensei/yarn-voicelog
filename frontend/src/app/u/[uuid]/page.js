@@ -27,7 +27,11 @@ export default function DashboardPage() {
           getUserProfile(userUuid),
           getUserLogs(userUuid),
         ]);
-        if (userData && userData.is_onboarded === false) {
+        const locallyOnboarded =
+          typeof window !== "undefined" &&
+          localStorage.getItem(`yarn_onboarded_${userUuid}`) === "true";
+
+        if (userData && userData.is_onboarded === false && !locallyOnboarded) {
           router.replace(`/u/${userUuid}/onboarding`);
           return;
         }

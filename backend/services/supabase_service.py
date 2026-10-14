@@ -128,10 +128,19 @@ def db_update_user(user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, 
     if not updates:
         return existing
 
-    res = client.table("users").update(updates).eq("id", user_id).execute()
-    if res.data and len(res.data) > 0:
-        return res.data[0]
-    return existing
+    try:
+        res = client.table("users").update(updates).eq("id", user_id).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]
+        return existing
+    except Exception as e:
+        logger.warning(f"Batch user update failed in Supabase ({e}), falling back to field-by-field update")
+        for k, v in updates.items():
+            try:
+                client.table("users").update({k: v}).eq("id", user_id).execute()
+            except Exception as field_err:
+                logger.warning(f"Could not update user field {k}: {field_err}")
+        return {**existing, **updates}
 
 
 # ============================================================

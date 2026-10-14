@@ -7,7 +7,16 @@ import MicButton from "@/components/MicButton";
 import Waveform from "@/components/Waveform";
 import Toast from "@/components/Toast";
 import { processVoiceInput, createLog, getUserProfile } from "@/lib/api";
-import { Sparkles, Lock, Upload, AlertTriangle, RefreshCw, GraduationCap, Sliders } from "lucide-react";
+import {
+  Sparkles,
+  Lock,
+  Upload,
+  AlertTriangle,
+  RefreshCw,
+  GraduationCap,
+  Sliders,
+  Languages,
+} from "lucide-react";
 
 export default function NewLogPage() {
   const params = useParams();
@@ -25,6 +34,8 @@ export default function NewLogPage() {
   const [toastMessage, setToastMessage] = useState("");
   const [trainingType, setTrainingType] = useState("siwes");
   const [logLengthLines, setLogLengthLines] = useState("2-3");
+  const [grammarLevel, setGrammarLevel] = useState("balanced");
+  const [useNigerianLingo, setUseNigerianLingo] = useState(true);
 
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
@@ -112,7 +123,7 @@ export default function NewLogPage() {
     return `${String(mins).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
   };
 
-  // Load student training program and log length defaults from settings
+  // Load student training program, grammar level, and line length defaults from settings
   useEffect(() => {
     async function loadUserPrefs() {
       try {
@@ -120,6 +131,8 @@ export default function NewLogPage() {
         if (u) {
           if (u.training_type) setTrainingType(u.training_type);
           if (u.log_length_lines) setLogLengthLines(u.log_length_lines);
+          if (u.grammar_level) setGrammarLevel(u.grammar_level);
+          if (u.use_nigerian_lingo !== undefined) setUseNigerianLingo(u.use_nigerian_lingo);
         }
       } catch (e) {
         console.warn("Could not load user program preferences", e);
@@ -156,6 +169,8 @@ export default function NewLogPage() {
         audio_file: audioFile,
         training_type: trainingType,
         log_length_lines: logLengthLines,
+        grammar_level: grammarLevel,
+        use_nigerian_lingo: useNigerianLingo,
       });
 
       if (!response || !response.processed_text) {
@@ -169,6 +184,7 @@ export default function NewLogPage() {
         processed_output: response.processed_text,
         training_type: trainingType,
         log_length_lines: logLengthLines,
+        grammar_level: grammarLevel,
         is_confidential: isConfidential,
       });
 
@@ -242,54 +258,85 @@ export default function NewLogPage() {
         )}
 
         {/* Active Logbook Format / Program Bar */}
-        <div className="w-full mt-3 p-3 bg-surface rounded-xl border border-border shadow-[0_1px_2px_rgba(16,24,40,0.05)] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-accent-50 flex items-center justify-center text-accent-600 shrink-0">
-              <GraduationCap size={15} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-caption-medium text-ink-500 uppercase tracking-wider">
-                Logbook Tier
-              </span>
-              <select
-                aria-label="Training program"
-                value={trainingType}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setTrainingType(val);
-                  if (val === "swep") setLogLengthLines("5-6");
-                  else if (val === "it") setLogLengthLines("2-4");
-                  else setLogLengthLines("2-3");
-                }}
-                className="bg-transparent text-ink-900 font-small-medium text-small outline-none cursor-pointer pr-1 -ml-0.5 hover:text-accent-700 font-semibold"
-              >
-                <option value="swep">SWEP (Part 2)</option>
-                <option value="siwes">SIWES (Part 3)</option>
-                <option value="it">IT (Part 4)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-caption-medium text-ink-500 uppercase tracking-wider">
-                Target Lines
-              </span>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <Sliders size={13} className="text-accent-600" />
+        <div className="w-full mt-3 p-3 bg-surface rounded-xl border border-border shadow-[0_1px_2px_rgba(16,24,40,0.05)] flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-accent-50 flex items-center justify-center text-accent-600 shrink-0">
+                <GraduationCap size={15} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-caption-medium text-ink-500 uppercase tracking-wider">
+                  Logbook Tier
+                </span>
                 <select
-                  aria-label="Target line length"
-                  value={logLengthLines}
-                  onChange={(e) => setLogLengthLines(e.target.value)}
-                  className="bg-surface-muted text-ink-900 font-small-medium text-caption px-2 py-0.5 rounded-lg border border-border outline-none cursor-pointer focus:border-accent-600"
+                  aria-label="Training program"
+                  value={trainingType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setTrainingType(val);
+                    if (val === "swep") setLogLengthLines("5-6");
+                    else if (val === "it") setLogLengthLines("2-4");
+                    else setLogLengthLines("2-3");
+                  }}
+                  className="bg-transparent text-ink-900 font-small-medium text-small outline-none cursor-pointer pr-1 -ml-0.5 hover:text-accent-700 font-semibold"
                 >
-                  <option value="2-3">2–3 lines (SIWES)</option>
-                  <option value="2-4">2–4 lines (IT)</option>
-                  <option value="3-4">3–4 lines</option>
-                  <option value="5-6">5–6 lines (SWEP)</option>
+                  <option value="swep">SWEP (Part 2)</option>
+                  <option value="siwes">SIWES (Part 3)</option>
+                  <option value="it">IT (Part 4)</option>
                 </select>
               </div>
             </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-caption-medium text-ink-500 uppercase tracking-wider">
+                  Target Lines
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Sliders size={13} className="text-accent-600" />
+                  <select
+                    aria-label="Target line length"
+                    value={logLengthLines}
+                    onChange={(e) => setLogLengthLines(e.target.value)}
+                    className="bg-surface-muted text-ink-900 font-small-medium text-caption px-2 py-0.5 rounded-lg border border-border outline-none cursor-pointer focus:border-accent-600"
+                  >
+                    <option value="2-3">2–3 lines (SIWES)</option>
+                    <option value="2-4">2–4 lines (IT)</option>
+                    <option value="3-4">3–4 lines</option>
+                    <option value="5-6">5–6 lines (SWEP)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border/70 flex items-center justify-between gap-2 text-caption">
+            <div className="flex items-center gap-1.5">
+              <Languages size={13} className="text-accent-600 shrink-0" />
+              <span className="text-ink-600 font-caption">Tone:</span>
+              <select
+                aria-label="Grammar tone"
+                value={grammarLevel}
+                onChange={(e) => setGrammarLevel(e.target.value)}
+                className="bg-surface-muted text-ink-900 font-caption-medium px-2 py-0.5 rounded-lg border border-border outline-none cursor-pointer hover:border-ink-400 focus:border-accent-600"
+              >
+                <option value="informal">Informal (Student tone)</option>
+                <option value="balanced">Balanced (Standard)</option>
+                <option value="formal">Formal & Academic</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setUseNigerianLingo((prev) => !prev)}
+              className={`px-2 py-0.5 rounded-lg border text-[11px] font-caption-medium transition-colors ${
+                useNigerianLingo
+                  ? "bg-accent-50 border-accent-200 text-accent-700 font-semibold"
+                  : "bg-surface-muted border-border text-ink-500"
+              }`}
+            >
+              {useNigerianLingo ? "🇳🇬 Nigerian Lingo: ON" : "Nigerian Lingo: OFF"}
+            </button>
           </div>
         </div>
 
@@ -326,10 +373,10 @@ export default function NewLogPage() {
           </div>
 
           {/* Sub-badge cue */}
-          <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-border/50 flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-muted text-ink-600 font-caption text-caption">
-              <Sparkles size={13} className="text-accent-600" />
-              Target: {logLengthLines} lines • {trainingType.toUpperCase()}
+              <Sparkles size={13} className="text-accent-600 shrink-0" />
+              Target: {logLengthLines} lines • {trainingType.toUpperCase()} • {grammarLevel.charAt(0).toUpperCase() + grammarLevel.slice(1)} • {useNigerianLingo ? "Lingo ON" : "Standard"}
             </span>
             <span className="font-caption text-caption text-ink-400">Tap anywhere to edit</span>
           </div>

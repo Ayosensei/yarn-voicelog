@@ -125,10 +125,13 @@ def create_user(user: UserCreate):
             created = db_create_user(
                 name=user.name,
                 field_of_work=user.field_of_work,
+                faculty=user.faculty,
                 department=user.department,
                 institution=user.institution,
                 training_type=user.training_type or "siwes",
                 log_length_lines=user.log_length_lines or "2-3",
+                grammar_level=user.grammar_level or "balanced",
+                use_nigerian_lingo=user.use_nigerian_lingo,
                 is_onboarded=user.is_onboarded,
             )
             uid = str(created["id"])
@@ -138,10 +141,13 @@ def create_user(user: UserCreate):
                 "id": uid,
                 "name": created["name"],
                 "field_of_work": created.get("field_of_work"),
+                "faculty": created.get("faculty"),
                 "department": created.get("department"),
                 "institution": created.get("institution"),
                 "training_type": created.get("training_type") or "siwes",
                 "log_length_lines": created.get("log_length_lines") or "2-3",
+                "grammar_level": created.get("grammar_level") or "balanced",
+                "use_nigerian_lingo": created.get("use_nigerian_lingo", True),
                 "is_onboarded": created.get("is_onboarded", False),
                 "custom_prompt": created.get("custom_prompt"),
                 "has_own_key": bool(created.get("api_key_encrypted")),
@@ -156,10 +162,13 @@ def create_user(user: UserCreate):
         "id": user_id,
         "name": user.name,
         "field_of_work": user.field_of_work,
+        "faculty": user.faculty,
         "department": user.department,
         "institution": user.institution,
         "training_type": user.training_type or "siwes",
         "log_length_lines": user.log_length_lines or "2-3",
+        "grammar_level": user.grammar_level or "balanced",
+        "use_nigerian_lingo": user.use_nigerian_lingo,
         "is_onboarded": user.is_onboarded,
         "custom_prompt": None,
         "api_key_encrypted": None,
@@ -170,10 +179,13 @@ def create_user(user: UserCreate):
         "id": new_user["id"],
         "name": new_user["name"],
         "field_of_work": new_user["field_of_work"],
+        "faculty": new_user["faculty"],
         "department": new_user["department"],
         "institution": new_user["institution"],
         "training_type": new_user["training_type"],
         "log_length_lines": new_user["log_length_lines"],
+        "grammar_level": new_user["grammar_level"],
+        "use_nigerian_lingo": new_user["use_nigerian_lingo"],
         "is_onboarded": new_user["is_onboarded"],
         "custom_prompt": new_user["custom_prompt"],
         "has_own_key": False,
@@ -194,10 +206,13 @@ def get_user(user_uuid: str):
                     "id": str(user["id"]),
                     "name": user["name"],
                     "field_of_work": user.get("field_of_work"),
+                    "faculty": user.get("faculty"),
                     "department": user.get("department"),
                     "institution": user.get("institution"),
                     "training_type": user.get("training_type") or "siwes",
                     "log_length_lines": user.get("log_length_lines") or "2-3",
+                    "grammar_level": user.get("grammar_level") or "balanced",
+                    "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
                     "is_onboarded": user.get("is_onboarded", False),
                     "custom_prompt": user.get("custom_prompt"),
                     "has_own_key": bool(user.get("api_key_encrypted")),
@@ -214,10 +229,13 @@ def get_user(user_uuid: str):
         "id": user["id"],
         "name": user["name"],
         "field_of_work": user.get("field_of_work"),
+        "faculty": user.get("faculty"),
         "department": user.get("department"),
         "institution": user.get("institution"),
         "training_type": user.get("training_type") or "siwes",
         "log_length_lines": user.get("log_length_lines") or "2-3",
+        "grammar_level": user.get("grammar_level") or "balanced",
+        "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
         "is_onboarded": user.get("is_onboarded", False),
         "custom_prompt": user.get("custom_prompt"),
         "has_own_key": bool(user.get("api_key_encrypted")),
@@ -239,6 +257,8 @@ def update_user(user_uuid: str, updates: UserUpdate):
                 db_updates["name"] = updates.name
             if updates.field_of_work is not None:
                 db_updates["field_of_work"] = updates.field_of_work
+            if updates.faculty is not None:
+                db_updates["faculty"] = updates.faculty
             if updates.department is not None:
                 db_updates["department"] = updates.department
             if updates.institution is not None:
@@ -247,6 +267,10 @@ def update_user(user_uuid: str, updates: UserUpdate):
                 db_updates["training_type"] = updates.training_type
             if updates.log_length_lines is not None:
                 db_updates["log_length_lines"] = updates.log_length_lines
+            if updates.grammar_level is not None:
+                db_updates["grammar_level"] = updates.grammar_level
+            if updates.use_nigerian_lingo is not None:
+                db_updates["use_nigerian_lingo"] = updates.use_nigerian_lingo
             if updates.is_onboarded is not None:
                 db_updates["is_onboarded"] = updates.is_onboarded
             if updates.custom_prompt is not None:
@@ -262,10 +286,13 @@ def update_user(user_uuid: str, updates: UserUpdate):
                     "id": str(updated["id"]),
                     "name": updated["name"],
                     "field_of_work": updated.get("field_of_work"),
+                    "faculty": updated.get("faculty"),
                     "department": updated.get("department"),
                     "institution": updated.get("institution"),
                     "training_type": updated.get("training_type") or "siwes",
                     "log_length_lines": updated.get("log_length_lines") or "2-3",
+                    "grammar_level": updated.get("grammar_level") or "balanced",
+                    "use_nigerian_lingo": updated.get("use_nigerian_lingo", True),
                     "is_onboarded": updated.get("is_onboarded", False),
                     "custom_prompt": updated.get("custom_prompt"),
                     "has_own_key": bool(updated.get("api_key_encrypted")),
@@ -285,6 +312,8 @@ def update_user(user_uuid: str, updates: UserUpdate):
         user["custom_prompt"] = updates.custom_prompt
     if updates.field_of_work is not None:
         user["field_of_work"] = updates.field_of_work
+    if updates.faculty is not None:
+        user["faculty"] = updates.faculty
     if updates.department is not None:
         user["department"] = updates.department
     if updates.institution is not None:
@@ -293,6 +322,10 @@ def update_user(user_uuid: str, updates: UserUpdate):
         user["training_type"] = updates.training_type
     if updates.log_length_lines is not None:
         user["log_length_lines"] = updates.log_length_lines
+    if updates.grammar_level is not None:
+        user["grammar_level"] = updates.grammar_level
+    if updates.use_nigerian_lingo is not None:
+        user["use_nigerian_lingo"] = updates.use_nigerian_lingo
     if updates.is_onboarded is not None:
         user["is_onboarded"] = updates.is_onboarded
 
@@ -307,10 +340,13 @@ def update_user(user_uuid: str, updates: UserUpdate):
         "id": user["id"],
         "name": user["name"],
         "field_of_work": user.get("field_of_work"),
+        "faculty": user.get("faculty"),
         "department": user.get("department"),
         "institution": user.get("institution"),
         "training_type": user.get("training_type") or "siwes",
         "log_length_lines": user.get("log_length_lines") or "2-3",
+        "grammar_level": user.get("grammar_level") or "balanced",
+        "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
         "is_onboarded": user.get("is_onboarded", False),
         "custom_prompt": user.get("custom_prompt"),
         "has_own_key": bool(user.get("api_key_encrypted")),
@@ -357,10 +393,13 @@ def auth_upsert_user(request_data: dict):
                     "id": uid,
                     "name": u["name"],
                     "field_of_work": u.get("field_of_work"),
+                    "faculty": u.get("faculty"),
                     "department": u.get("department"),
                     "institution": u.get("institution"),
                     "training_type": u.get("training_type") or "siwes",
                     "log_length_lines": u.get("log_length_lines") or "2-3",
+                    "grammar_level": u.get("grammar_level") or "balanced",
+                    "use_nigerian_lingo": u.get("use_nigerian_lingo", True),
                     "is_onboarded": u.get("is_onboarded", False),
                     "custom_prompt": u.get("custom_prompt"),
                     "has_own_key": bool(u.get("api_key_encrypted")),
@@ -379,10 +418,13 @@ def auth_upsert_user(request_data: dict):
                 "id": guest_uuid,
                 "name": u["name"],
                 "field_of_work": u.get("field_of_work"),
+                "faculty": u.get("faculty"),
                 "department": u.get("department"),
                 "institution": u.get("institution"),
                 "training_type": u.get("training_type") or "siwes",
                 "log_length_lines": u.get("log_length_lines") or "2-3",
+                "grammar_level": u.get("grammar_level") or "balanced",
+                "use_nigerian_lingo": u.get("use_nigerian_lingo", True),
                 "is_onboarded": u.get("is_onboarded", False),
                 "custom_prompt": u.get("custom_prompt"),
                 "has_own_key": bool(u.get("api_key_encrypted")),
@@ -397,10 +439,13 @@ def auth_upsert_user(request_data: dict):
             "name": name,
             "avatar_url": avatar_url,
             "field_of_work": None,
+            "faculty": None,
             "department": None,
             "institution": None,
             "training_type": "siwes",
             "log_length_lines": "2-3",
+            "grammar_level": "balanced",
+            "use_nigerian_lingo": True,
             "is_onboarded": False,
             "created_at": None,
         }
@@ -408,10 +453,13 @@ def auth_upsert_user(request_data: dict):
             "id": new_id,
             "name": name,
             "field_of_work": None,
+            "faculty": None,
             "department": None,
             "institution": None,
             "training_type": "siwes",
             "log_length_lines": "2-3",
+            "grammar_level": "balanced",
+            "use_nigerian_lingo": True,
             "is_onboarded": False,
             "custom_prompt": None,
             "has_own_key": False,
@@ -433,10 +481,13 @@ def auth_upsert_user(request_data: dict):
                 "id": user_id,
                 "name": user["name"],
                 "field_of_work": user.get("field_of_work"),
+                "faculty": user.get("faculty"),
                 "department": user.get("department"),
                 "institution": user.get("institution"),
                 "training_type": user.get("training_type") or "siwes",
                 "log_length_lines": user.get("log_length_lines") or "2-3",
+                "grammar_level": user.get("grammar_level") or "balanced",
+                "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
                 "is_onboarded": user.get("is_onboarded", False),
                 "custom_prompt": user.get("custom_prompt"),
                 "has_own_key": bool(user.get("api_key_encrypted")),
@@ -460,10 +511,13 @@ def auth_upsert_user(request_data: dict):
                         "id": str(user["id"]),
                         "name": user["name"],
                         "field_of_work": user.get("field_of_work"),
+                        "faculty": user.get("faculty"),
                         "department": user.get("department"),
                         "institution": user.get("institution"),
                         "training_type": user.get("training_type") or "siwes",
                         "log_length_lines": user.get("log_length_lines") or "2-3",
+                        "grammar_level": user.get("grammar_level") or "balanced",
+                        "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
                         "is_onboarded": user.get("is_onboarded", False),
                         "custom_prompt": user.get("custom_prompt"),
                         "has_own_key": bool(user.get("api_key_encrypted")),
@@ -478,6 +532,8 @@ def auth_upsert_user(request_data: dict):
             "avatar_url": avatar_url,
             "training_type": "siwes",
             "log_length_lines": "2-3",
+            "grammar_level": "balanced",
+            "use_nigerian_lingo": True,
             "is_onboarded": False,
         }).execute()
 
@@ -486,10 +542,13 @@ def auth_upsert_user(request_data: dict):
             "id": str(user["id"]),
             "name": user["name"],
             "field_of_work": user.get("field_of_work"),
+            "faculty": user.get("faculty"),
             "department": user.get("department"),
             "institution": user.get("institution"),
             "training_type": user.get("training_type") or "siwes",
             "log_length_lines": user.get("log_length_lines") or "2-3",
+            "grammar_level": user.get("grammar_level") or "balanced",
+            "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
             "is_onboarded": user.get("is_onboarded", False),
             "custom_prompt": user.get("custom_prompt"),
             "has_own_key": False,
@@ -519,10 +578,13 @@ def get_user_by_auth_id(auth_user_id: str):
             "id": str(user["id"]),
             "name": user["name"],
             "field_of_work": user.get("field_of_work"),
+            "faculty": user.get("faculty"),
             "department": user.get("department"),
             "institution": user.get("institution"),
             "training_type": user.get("training_type") or "siwes",
             "log_length_lines": user.get("log_length_lines") or "2-3",
+            "grammar_level": user.get("grammar_level") or "balanced",
+            "use_nigerian_lingo": user.get("use_nigerian_lingo", True),
             "is_onboarded": user.get("is_onboarded", False),
             "custom_prompt": user.get("custom_prompt"),
             "has_own_key": bool(user.get("api_key_encrypted")),
@@ -558,6 +620,7 @@ def create_log(log: LogCreate):
                 audio_file_url=None,  # Not retained in storage
                 training_type=log.training_type,
                 log_length_lines=log.log_length_lines,
+                grammar_level=log.grammar_level,
             )
             lid = str(created["id"])
             fake_logs_db[lid] = created
@@ -569,6 +632,7 @@ def create_log(log: LogCreate):
                 "processed_output": created["processed_output"],
                 "training_type": created.get("training_type"),
                 "log_length_lines": created.get("log_length_lines"),
+                "grammar_level": created.get("grammar_level"),
                 "is_confidential": created.get("is_confidential", False),
                 "audio_file_url": None,
                 "deleted_at": created.get("deleted_at"),
@@ -587,6 +651,7 @@ def create_log(log: LogCreate):
         "processed_output": log.processed_output,
         "training_type": log.training_type,
         "log_length_lines": log.log_length_lines,
+        "grammar_level": log.grammar_level,
         "is_confidential": log.is_confidential,
         "audio_file_url": None,
         "deleted_at": None,
@@ -845,6 +910,8 @@ async def process_voice(request: Request):
     use_own_key = False
     req_training_type = None
     req_log_length_lines = None
+    req_grammar_level = None
+    req_use_nigerian_lingo = None
 
     if "multipart/form-data" in content_type:
         form = await request.form()
@@ -852,6 +919,8 @@ async def process_voice(request: Request):
         use_own_key = str(form.get("use_own_key", "false")).lower() in ("true", "1")
         req_training_type = form.get("training_type")
         req_log_length_lines = form.get("log_length_lines")
+        req_grammar_level = form.get("grammar_level")
+        req_use_nigerian_lingo = form.get("use_nigerian_lingo")
         audio_file = form.get("audio_file")
         if audio_file and hasattr(audio_file, "read"):
             file_bytes = await audio_file.read()
@@ -869,6 +938,8 @@ async def process_voice(request: Request):
         use_own_key = bool(body.get("use_own_key", False))
         req_training_type = body.get("training_type")
         req_log_length_lines = body.get("log_length_lines")
+        req_grammar_level = body.get("grammar_level")
+        req_use_nigerian_lingo = body.get("use_nigerian_lingo")
 
     if not user_uuid:
         raise HTTPException(status_code=400, detail="Missing user_uuid")
@@ -906,8 +977,19 @@ async def process_voice(request: Request):
 
     custom_prompt = user.get("custom_prompt") if user else None
     field_of_work = user.get("field_of_work") if user else None
+    department = user.get("department") if user else None
     training_type = req_training_type or (user.get("training_type") if user else "siwes") or "siwes"
     log_length_lines = req_log_length_lines or (user.get("log_length_lines") if user else None)
+    grammar_level = req_grammar_level or (user.get("grammar_level") if user else "balanced") or "balanced"
+
+    use_nigerian_lingo = True
+    if req_use_nigerian_lingo is not None:
+        if isinstance(req_use_nigerian_lingo, str):
+            use_nigerian_lingo = req_use_nigerian_lingo.lower() in ("true", "1")
+        else:
+            use_nigerian_lingo = bool(req_use_nigerian_lingo)
+    elif user and user.get("use_nigerian_lingo") is not None:
+        use_nigerian_lingo = bool(user["use_nigerian_lingo"])
 
     # Step 2: Build the full prompt with student program profile and line limit
     full_prompt = build_prompt(
@@ -915,8 +997,11 @@ async def process_voice(request: Request):
         custom_prompt=custom_prompt,
         vocabulary_terms=user_vocab if user_vocab else None,
         field_of_work=field_of_work,
+        department=department,
         training_type=training_type,
         log_length_lines=log_length_lines,
+        grammar_level=grammar_level,
+        use_nigerian_lingo=use_nigerian_lingo,
     )
 
     # Step 3: Resolve which API key to use (BYOK support)

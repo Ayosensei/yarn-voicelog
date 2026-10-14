@@ -13,6 +13,11 @@ import {
   deleteVocabularyTerm,
 } from "@/lib/api";
 import {
+  ALL_FACULTIES,
+  getDepartmentsForFaculty,
+  findFacultyForDepartment,
+} from "@/lib/departments";
+import {
   User,
   PenLine,
   BookOpen,
@@ -30,6 +35,8 @@ import {
   Lock,
   GraduationCap,
   Sliders,
+  Languages,
+  Sparkles,
 } from "lucide-react";
 
 const PROGRAM_OPTIONS = [
@@ -59,6 +66,27 @@ const PROGRAM_OPTIONS = [
   },
 ];
 
+const GRAMMAR_OPTIONS = [
+  {
+    id: "informal",
+    title: "Purely informal",
+    badge: "Student conversational",
+    desc: "Relaxed sentences in active first-person (e.g. 'I followed my supervisor to site and we fixed the valve...').",
+  },
+  {
+    id: "balanced",
+    title: "Balanced (Recommended)",
+    badge: "Standard logbook",
+    desc: "Practical technical terms with natural 'I' and 'We' sentences ('I inspected the pump and we completed the servicing...').",
+  },
+  {
+    id: "formal",
+    title: "Formal & academic",
+    badge: "Engineering rigor",
+    desc: "Rigorous technical phrasing suitable for official university examination and faculty grading.",
+  },
+];
+
 const LINE_PRESETS = ["2-3", "2-4", "3-4", "5-6"];
 
 export default function SettingsPage() {
@@ -67,13 +95,18 @@ export default function SettingsPage() {
 
   const [profile, setProfile] = useState({
     name: "",
+    faculty: "Faculty of Technology",
     department: "",
     institution: "",
     field_of_work: "",
     training_type: "siwes",
     log_length_lines: "2-3",
+    grammar_level: "balanced",
+    use_nigerian_lingo: true,
     custom_prompt: "",
   });
+  const [customDept, setCustomDept] = useState("");
+  const [isCustomDept, setIsCustomDept] = useState(false);
   const [vocabulary, setVocabulary] = useState([]);
   const [newTerm, setNewTerm] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -93,15 +126,41 @@ export default function SettingsPage() {
           getUserProfile(userUuid),
           getUserVocabulary(userUuid),
         ]);
+        const userFaculty =
+          profData?.faculty ||
+          (profData?.department ? findFacultyForDepartment(profData.department) : "Faculty of Technology") ||
+          "Faculty of Technology";
+        let userDept = profData?.department || "";
+        let isCustom = false;
+        let customVal = "";
+
+        if (userDept) {
+          const foundFac = findFacultyForDepartment(userDept);
+          if (foundFac) {
+            // Valid recognized department
+          } else {
+            isCustom = true;
+            customVal = userDept;
+            userDept = "__other__";
+          }
+        }
+
         setProfile({
           name: profData?.name || "",
-          department: profData?.department || "",
+          faculty: userFaculty,
+          department: userDept,
           institution: profData?.institution || "",
           field_of_work: profData?.field_of_work || "",
           training_type: profData?.training_type || "siwes",
           log_length_lines: profData?.log_length_lines || "2-3",
+          grammar_level: profData?.grammar_level || "balanced",
+          use_nigerian_lingo: profData?.use_nigerian_lingo !== undefined ? profData.use_nigerian_lingo : true,
           custom_prompt: profData?.custom_prompt || "",
         });
+        if (isCustom) {
+          setIsCustomDept(true);
+          setCustomDept(customVal);
+        }
         setVocabulary(vocabData || []);
       } catch (err) {
         console.error("Settings load error:", err);
@@ -111,6 +170,31 @@ export default function SettingsPage() {
     }
     loadSettings();
   }, [userUuid]);
+
+  const handleFacultyChange = (newFaculty) => {
+    const depts = getDepartmentsForFaculty(newFaculty);
+    const firstDept = depts && depts.length > 0 ? depts[0] : "__other__";
+    setProfile((prev) => ({
+      ...prev,
+      faculty: newFaculty,
+      department: firstDept,
+    }));
+    if (firstDept === "__other__") {
+      setIsCustomDept(true);
+    } else {
+      setIsCustomDept(false);
+    }
+  };
+
+  const handleDepartmentChange = (newDept) => {
+    if (newDept === "__other__") {
+      setIsCustomDept(true);
+      setProfile((prev) => ({ ...prev, department: "__other__" }));
+    } else {
+      setIsCustomDept(false);
+      setProfile((prev) => ({ ...prev, department: newDept }));
+    }
+  };
 
   // Handle Adding Vocabulary Term
   const handleAddTerm = async (e) => {
@@ -163,14 +247,23 @@ export default function SettingsPage() {
     e?.preventDefault();
     setSaving(true);
 
+    const effectiveDept = isCustomDept
+      ? customDept.trim() || null
+      : profile.department === "__other__"
+      ? null
+      : profile.department;
+
     try {
       await updateUserProfile(userUuid, {
         name: profile.name,
-        department: profile.department,
+        faculty: profile.faculty || null,
+        department: effectiveDept,
         institution: profile.institution,
         field_of_work: profile.field_of_work,
         training_type: profile.training_type || "siwes",
         log_length_lines: profile.log_length_lines || "2-3",
+        grammar_level: profile.grammar_level || "balanced",
+        use_nigerian_lingo: profile.use_nigerian_lingo !== undefined ? profile.use_nigerian_lingo : true,
         custom_prompt: profile.custom_prompt,
         api_key: apiKey ? apiKey.trim() : undefined,
       });
@@ -262,32 +355,71 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-dept">
-                    Department / course
+                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-faculty">
+                    Faculty
                   </label>
-                  <input
-                    id="profile-dept"
-                    type="text"
-                    value={profile.department || ""}
-                    onChange={(e) => setProfile({ ...profile, department: e.target.value })}
-                    placeholder="e.g. Mechanical Engineering"
-                    className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
-                  />
+                  <select
+                    id="profile-faculty"
+                    value={profile.faculty || "Faculty of Technology"}
+                    onChange={(e) => handleFacultyChange(e.target.value)}
+                    className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all cursor-pointer"
+                  >
+                    {ALL_FACULTIES.map((fac) => (
+                      <option key={fac} value={fac}>
+                        {fac}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-institution">
-                    Institution
+                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-dept">
+                    Department
+                  </label>
+                  <select
+                    id="profile-dept"
+                    value={isCustomDept ? "__other__" : profile.department || ""}
+                    onChange={(e) => handleDepartmentChange(e.target.value)}
+                    className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all cursor-pointer"
+                  >
+                    {getDepartmentsForFaculty(profile.faculty || "Faculty of Technology").map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                    <option value="__other__">Other / Department not listed</option>
+                  </select>
+                </div>
+              </div>
+
+              {isCustomDept && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="custom-dept">
+                    Specify department name
                   </label>
                   <input
-                    id="profile-institution"
+                    id="custom-dept"
                     type="text"
-                    value={profile.institution || ""}
-                    onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
-                    placeholder="e.g. FUTA, UNILAG, OAU"
+                    value={customDept}
+                    onChange={(e) => setCustomDept(e.target.value)}
+                    placeholder="Enter full department name"
                     className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
                   />
                 </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-institution">
+                  Institution
+                </label>
+                <input
+                  id="profile-institution"
+                  type="text"
+                  value={profile.institution || ""}
+                  onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
+                  placeholder="e.g. FUTA, UNILAG, OAU, UNIBEN"
+                  className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -416,6 +548,101 @@ export default function SettingsPage() {
                   Yarn formats your output directly for handwritten physical logbooks (concise bullet points or tight sentences). No oversized headers eating into your paper lines.
                 </p>
               </div>
+            </div>
+
+            {/* Grammar Level Selector */}
+            <div className="mt-2 pt-3 border-t border-border flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Languages size={17} className="text-accent-600" />
+                  <span className="font-small-medium text-small text-ink-900 font-semibold">
+                    Grammar Tone & Style
+                  </span>
+                </div>
+                <span className="text-caption font-caption-medium text-accent-700 bg-accent-50 px-2 py-0.5 rounded-full border border-accent-200">
+                  {profile.grammar_level === "informal"
+                    ? "Informal"
+                    : profile.grammar_level === "formal"
+                    ? "Formal & Academic"
+                    : "Balanced (Recommended)"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {GRAMMAR_OPTIONS.map((g) => {
+                  const isSelected = (profile.grammar_level || "balanced") === g.id;
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setProfile((prev) => ({ ...prev, grammar_level: g.id }))}
+                      className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all active:scale-[0.99] ${
+                        isSelected
+                          ? "border-accent-600 bg-accent-50/50 shadow-sm ring-1 ring-accent-600/30"
+                          : "border-border hover:border-ink-400 bg-surface"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="font-small-medium text-small font-semibold text-ink-900">
+                            {g.title}
+                          </span>
+                          {isSelected && <Check size={14} className="text-accent-600 shrink-0" />}
+                        </div>
+                        <p className="text-[12px] text-ink-600 leading-snug">
+                          {g.desc}
+                        </p>
+                      </div>
+                      <span
+                        className={`mt-2.5 inline-block text-[10px] font-caption-medium px-2 py-0.5 rounded-full w-fit ${
+                          isSelected
+                            ? "bg-accent-600 text-surface"
+                            : "bg-surface-muted text-ink-600 border border-border"
+                        }`}
+                      >
+                        {g.badge}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Nigerian English Lingo Toggle */}
+            <div className="mt-2 pt-3 border-t border-border flex flex-col gap-2">
+              <label
+                htmlFor="toggle-nigerian-lingo"
+                className="flex items-start justify-between gap-4 cursor-pointer p-3 rounded-xl border border-border bg-surface-muted/40 hover:bg-surface-muted transition-colors"
+              >
+                <div className="flex flex-col">
+                  <span className="font-small-medium text-small text-ink-900 font-semibold flex items-center gap-1.5">
+                    <span>Authentic Nigerian Workplace & Workshop Lingo</span>
+                    <span className="text-[11px] px-1.5 py-0.2 rounded-md bg-accent-100 text-accent-700 font-caption-medium">
+                      Site & Factory
+                    </span>
+                  </span>
+                  <p className="text-caption text-ink-600 mt-0.5 leading-relaxed">
+                    Includes authentic phrasing such as <em className="text-ink-800">"I followed my supervisor to site"</em>, <em className="text-ink-800">"We carried out the routine servicing of..."</em>, <em className="text-ink-800">"collected tools from the workshop store"</em>, and <em className="text-ink-800">"morning toolbox safety talk"</em>.
+                  </p>
+                </div>
+                <input
+                  id="toggle-nigerian-lingo"
+                  type="checkbox"
+                  checked={profile.use_nigerian_lingo}
+                  onChange={(e) =>
+                    setProfile((prev) => ({ ...prev, use_nigerian_lingo: e.target.checked }))
+                  }
+                  className="mt-1 w-5 h-5 rounded text-accent-600 focus:ring-accent-500 border-border cursor-pointer shrink-0"
+                />
+              </label>
+            </div>
+
+            {/* Pronoun Policy Card */}
+            <div className="bg-surface-muted border border-border rounded-xl p-3 flex items-start gap-2.5">
+              <Sparkles size={16} className="text-accent-600 shrink-0 mt-0.5" />
+              <p className="font-caption text-caption text-ink-700 leading-relaxed">
+                <strong className="text-ink-900 font-medium">Pronoun Policy:</strong> Yarn always outputs active, complete sentences using <strong>"I"</strong> for individual work and <strong>"We"</strong> for team tasks alongside supervisors, technicians, and peers. Robotic impersonal fragments (e.g. <em>"Calibrated the pump"</em>) are strictly prohibited.
+              </p>
             </div>
           </section>
 

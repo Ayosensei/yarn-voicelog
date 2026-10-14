@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getUserProfile, updateUserProfile } from "@/lib/api";
 import {
+  FACULTIES_AND_DEPARTMENTS,
+  ALL_FACULTIES,
+  getDepartmentsForFaculty,
+  findFacultyForDepartment,
+} from "@/lib/departments";
+import {
   GraduationCap,
   Building2,
   BookOpen,
@@ -14,6 +20,8 @@ import {
   Sparkles,
   Sliders,
   AlignLeft,
+  Languages,
+  MessageSquare,
 } from "lucide-react";
 
 const PROGRAM_OPTIONS = [
@@ -25,8 +33,14 @@ const PROGRAM_OPTIONS = [
     defaultLines: "5-6",
     badge: "Practical & Workshop",
     desc: "Foundational workshop practicals (lathe work, bench fitting, safety rules, welding).",
-    preview:
-      "• Received safety briefing on workshop protocols and PPE compliance in the machine shop.\n• Operated the manual lathe to turn a 25mm mild steel workpiece to specified diameter.\n• Performed bench filing and chamfering under technician supervision.",
+    preview: {
+      informal:
+        "• I reported to the mechanical workshop and we collected our mild steel rods from the store.\n• I set up the workpiece on the bench vise and we filed the edges smooth.\n• We used a vernier caliper to check the thickness before calling the technician.",
+      balanced:
+        "• I attended the workshop safety briefing and we collected our mild steel stock from the store.\n• I operated the manual lathe to turn the workpiece down to 25mm diameter.\n• We checked the finished dimensions against tolerance specs using a vernier caliper.",
+      formal:
+        "• I completed mandatory workshop safety compliance protocols alongside our training group.\n• I operated the centre lathe to machine a 25mm mild steel cylindrical specimen to specification.\n• We conducted dimensional tolerance verification using a calibrated vernier caliper.",
+    },
   },
   {
     id: "siwes",
@@ -36,8 +50,14 @@ const PROGRAM_OPTIONS = [
     defaultLines: "2-3",
     badge: "Industry Exposure",
     desc: "Introductory industrial attachment, routine testing, and maintenance routines.",
-    preview:
-      "• Inspected and logged operating pressures on secondary centrifugal pumps.\n• Assisted senior engineer with routine oil sampling and filter replacement.",
+    preview: {
+      informal:
+        "• I followed my supervisor to the pump house and we checked the operating pressures.\n• I helped the technician top up lubricating oil and we cleaned up the work area.",
+      balanced:
+        "• I followed my supervisor to the primary pump house and we logged operating suction pressures.\n• I assisted the senior technician with routine oil lubrication and filter cleaning.",
+      formal:
+        "• I conducted routine pressure logging on primary centrifugal pumps under senior engineering supervision.\n• We executed preventive lubrication maintenance and verified system operational parameters.",
+    },
   },
   {
     id: "it",
@@ -47,8 +67,35 @@ const PROGRAM_OPTIONS = [
     defaultLines: "2-4",
     badge: "Professional Rigor",
     desc: "Substantial industrial training, technical engineering workflows, and system operations.",
-    preview:
-      "• Diagnosed pressure drop across chiller condenser tubes using differential gauges.\n• Executed scheduled chemical descaling protocol and verified baseline flow rates.\n• Prepared daily handover logbook entry for the incoming shift supervisor.",
+    preview: {
+      informal:
+        "• I checked the cooling tower condenser pipes and we noticed a pressure drop.\n• We carried out the chemical cleaning with the senior engineer and I recorded the new flow readings.",
+      balanced:
+        "• I inspected the cooling tower condenser loop and we measured pressure differentials using calibrated gauges.\n• We executed the scheduled chemical descaling protocol to restore baseline flow rates.\n• I documented all temperature and pressure parameters in the shift handover logbook.",
+      formal:
+        "• I diagnosed an abnormal pressure drop across the condenser loop utilizing differential telemetry.\n• We executed an authorized chemical descaling protocol and validated baseline fluid velocity.\n• I prepared the operational performance summary for the engineering shift log.",
+    },
+  },
+];
+
+const GRAMMAR_OPTIONS = [
+  {
+    id: "informal",
+    title: "Purely informal",
+    badge: "Everyday student tone",
+    desc: "Relaxed, conversational sentences (e.g., 'I followed my supervisor to site and we fixed the valve...').",
+  },
+  {
+    id: "balanced",
+    title: "Balanced (Recommended)",
+    badge: "Standard logbook",
+    desc: "Practical technical terms with natural first-person student voice ('I inspected the pump and we completed the servicing...').",
+  },
+  {
+    id: "formal",
+    title: "Formal & academic",
+    badge: "Engineering rigor",
+    desc: "Strictly structured technical phrasing suitable for official university examination and grading.",
   },
 ];
 
@@ -63,9 +110,14 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [institution, setInstitution] = useState("");
-  const [department, setDepartment] = useState("");
+  const [faculty, setFaculty] = useState("Faculty of Technology");
+  const [department, setDepartment] = useState("Mechanical Engineering");
+  const [customDept, setCustomDept] = useState("");
+  const [isCustomDept, setIsCustomDept] = useState(false);
   const [trainingType, setTrainingType] = useState("siwes");
   const [logLengthLines, setLogLengthLines] = useState("2-3");
+  const [grammarLevel, setGrammarLevel] = useState("balanced");
+  const [useNigerianLingo, setUseNigerianLingo] = useState(true);
   const [fieldOfWork, setFieldOfWork] = useState("");
   const [customLines, setCustomLines] = useState("");
   const [isCustomLineMode, setIsCustomLineMode] = useState(false);
@@ -78,8 +130,22 @@ export default function OnboardingPage() {
         if (user) {
           if (user.name) setName(user.name);
           if (user.institution) setInstitution(user.institution);
-          if (user.department) setDepartment(user.department);
+          if (user.faculty) setFaculty(user.faculty);
+          if (user.department) {
+            const detectedFaculty = findFacultyForDepartment(user.department);
+            if (detectedFaculty) {
+              setFaculty(detectedFaculty);
+              setDepartment(user.department);
+              setIsCustomDept(false);
+            } else {
+              setDepartment("Other");
+              setIsCustomDept(true);
+              setCustomDept(user.department);
+            }
+          }
           if (user.training_type) setTrainingType(user.training_type);
+          if (user.grammar_level) setGrammarLevel(user.grammar_level);
+          if (user.use_nigerian_lingo !== undefined) setUseNigerianLingo(user.use_nigerian_lingo);
           if (user.log_length_lines) {
             setLogLengthLines(user.log_length_lines);
             if (!LINE_PRESETS.includes(user.log_length_lines)) {
@@ -97,6 +163,28 @@ export default function OnboardingPage() {
     }
     loadInitialData();
   }, [userUuid]);
+
+  const handleFacultyChange = (newFaculty) => {
+    setFaculty(newFaculty);
+    const depts = getDepartmentsForFaculty(newFaculty);
+    if (depts && depts.length > 0) {
+      setDepartment(depts[0]);
+      setIsCustomDept(false);
+    } else {
+      setDepartment("Other");
+      setIsCustomDept(true);
+    }
+  };
+
+  const handleDepartmentChange = (newDept) => {
+    if (newDept === "__other__") {
+      setIsCustomDept(true);
+      setDepartment("__other__");
+    } else {
+      setIsCustomDept(false);
+      setDepartment(newDept);
+    }
+  };
 
   const handleProgramSelect = (progId) => {
     setTrainingType(progId);
@@ -128,13 +216,22 @@ export default function OnboardingPage() {
       ? customLines.trim() || logLengthLines
       : logLengthLines;
 
+    const effectiveDept = isCustomDept
+      ? customDept.trim() || null
+      : department === "__other__"
+      ? null
+      : department;
+
     try {
       await updateUserProfile(userUuid, {
         name: name.trim(),
         institution: institution.trim() || null,
-        department: department.trim() || null,
+        faculty: faculty || null,
+        department: effectiveDept,
         training_type: trainingType,
         log_length_lines: effectiveLines,
+        grammar_level: grammarLevel,
+        use_nigerian_lingo: useNigerianLingo,
         field_of_work: fieldOfWork.trim() || null,
         is_onboarded: true,
       });
@@ -169,6 +266,11 @@ export default function OnboardingPage() {
   const selectedProgramObj =
     PROGRAM_OPTIONS.find((p) => p.id === trainingType) || PROGRAM_OPTIONS[1];
 
+  const currentPreviewText =
+    selectedProgramObj.preview[grammarLevel] || selectedProgramObj.preview["balanced"];
+
+  const currentAvailableDepts = getDepartmentsForFaculty(faculty);
+
   return (
     <div className="min-h-screen bg-background py-8 px-gutter">
       <main className="w-full max-w-[640px] mx-auto flex flex-col gap-6">
@@ -178,20 +280,21 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-accent-600" />
-              <span className="font-heading text-[17px] font-semibold text-ink-900 tracking-tight">
+              <span className="font-heading text-[17px] font-semibold text-ink-900 tracking-tight lowercase">
                 yarn
               </span>
             </div>
             <span className="text-caption font-caption-medium px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
-              Setup step
+              Student setup
             </span>
           </div>
           <h1 className="font-title text-title font-semibold text-ink-900 tracking-tight mt-2">
             Tailor Yarn to your logbook
           </h1>
           <p className="font-body text-body text-ink-600">
-            Tell us about your training program and institution so the AI formats
-            each spoken entry to fit your physical paper logbook lines.
+            Tell us about your university, program, and preferred writing style.
+            Yarn will generate daily entries using personal sentences with "I" and "We"
+            fitting your paper lines.
           </p>
         </header>
 
@@ -229,42 +332,89 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              {/* Institution and Department Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="ob-institution"
-                    className="font-small-medium text-small font-medium text-ink-900"
-                  >
-                    Institution / University
-                  </label>
-                  <input
-                    id="ob-institution"
-                    type="text"
-                    value={institution}
-                    onChange={(e) => setInstitution(e.target.value)}
-                    placeholder="e.g. FUTA, UNILAG, OAU"
-                    className="h-[48px] w-full px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all placeholder:text-ink-400"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="ob-dept"
-                    className="font-small-medium text-small font-medium text-ink-900"
-                  >
-                    Department / Course
-                  </label>
-                  <input
-                    id="ob-dept"
-                    type="text"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="e.g. Mechanical Engineering"
-                    className="h-[48px] w-full px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all placeholder:text-ink-400"
-                  />
-                </div>
+              {/* Institution */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="ob-institution"
+                  className="font-small-medium text-small font-medium text-ink-900"
+                >
+                  Institution / University
+                </label>
+                <input
+                  id="ob-institution"
+                  type="text"
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
+                  placeholder="e.g. FUTA, UNILAG, OAU, UNIBEN"
+                  className="h-[48px] w-full px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all placeholder:text-ink-400"
+                />
               </div>
+
+              {/* Faculty Selector */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="ob-faculty"
+                  className="font-small-medium text-small font-medium text-ink-900"
+                >
+                  Faculty / School
+                </label>
+                <select
+                  id="ob-faculty"
+                  value={faculty}
+                  onChange={(e) => handleFacultyChange(e.target.value)}
+                  className="h-[48px] w-full px-3 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
+                >
+                  {ALL_FACULTIES.map((fac) => (
+                    <option key={fac} value={fac}>
+                      {fac}
+                    </option>
+                  ))}
+                  <option value="Other Faculty">Other Faculty</option>
+                </select>
+              </div>
+
+              {/* Department Selector */}
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="ob-dept"
+                  className="font-small-medium text-small font-medium text-ink-900"
+                >
+                  Department / Course
+                </label>
+                <select
+                  id="ob-dept"
+                  value={isCustomDept ? "__other__" : department}
+                  onChange={(e) => handleDepartmentChange(e.target.value)}
+                  className="h-[48px] w-full px-3 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
+                >
+                  {currentAvailableDepts.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                  <option value="__other__">Other / Department not listed</option>
+                </select>
+              </div>
+
+              {/* Custom Department input if chosen or not in list */}
+              {isCustomDept && (
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <label
+                    htmlFor="ob-custom-dept"
+                    className="font-small-medium text-small font-medium text-ink-900"
+                  >
+                    Specify your department
+                  </label>
+                  <input
+                    id="ob-custom-dept"
+                    type="text"
+                    value={customDept}
+                    onChange={(e) => setCustomDept(e.target.value)}
+                    placeholder="e.g. Metallurgical and Materials Engineering"
+                    className="h-[48px] w-full px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all placeholder:text-ink-400"
+                  />
+                </div>
+              )}
 
               {/* Placement focus / Field of Work */}
               <div className="flex flex-col gap-1.5">
@@ -272,18 +422,18 @@ export default function OnboardingPage() {
                   htmlFor="ob-field"
                   className="font-small-medium text-small font-medium text-ink-900"
                 >
-                  Industrial placement / Work focus
+                  Placement focus / Work unit
                 </label>
                 <input
                   id="ob-field"
                   type="text"
                   value={fieldOfWork}
                   onChange={(e) => setFieldOfWork(e.target.value)}
-                  placeholder="e.g. Automotive diagnostics, structural drafting, web dev"
+                  placeholder="e.g. Pump maintenance, road construction, crop imaging"
                   className="h-[48px] w-full px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all placeholder:text-ink-400"
                 />
                 <span className="text-[12px] text-ink-600 font-caption">
-                  Helps Yarn accurately transcribe technical tools and workshop terms.
+                  Helps Yarn recognize technical equipment and workshop jargon in your recordings.
                 </span>
               </div>
             </div>
@@ -301,7 +451,7 @@ export default function OnboardingPage() {
                 </h2>
               </div>
               <span className="text-caption text-ink-600 font-caption">
-                Select your current level
+                Select your level
               </span>
             </div>
 
@@ -360,7 +510,82 @@ export default function OnboardingPage() {
             </div>
           </section>
 
-          {/* Card 3: Logbook Physical Space & Line Length Constraint */}
+          {/* Card 3: Grammar Style & Nigerian Workplace Lingo */}
+          <section className="bg-surface rounded-2xl border border-border p-5 sm:p-6 shadow-[0_1px_3px_rgba(16,24,40,0.04)] flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
+                  <Languages size={18} />
+                </div>
+                <div>
+                  <h2 className="font-subheading text-subheading font-semibold text-ink-900">
+                    Grammar level & phrasing
+                  </h2>
+                </div>
+              </div>
+              <span className="text-caption font-caption-medium px-2 py-0.5 rounded-md bg-accent-50 text-accent-700">
+                Uses "I" & "We"
+              </span>
+            </div>
+
+            <p className="font-small text-small text-ink-600">
+              Choose how formal or conversational you want your logbook entries to be.
+            </p>
+
+            {/* Grammar Level Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {GRAMMAR_OPTIONS.map((g) => {
+                const isSelected = grammarLevel === g.id;
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setGrammarLevel(g.id)}
+                    className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                      isSelected
+                        ? "border-accent-600 bg-accent-50/50 ring-1 ring-accent-600/30"
+                        : "border-border bg-surface hover:border-ink-400"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-small-medium text-small font-semibold text-ink-900">
+                          {g.title}
+                        </span>
+                        {isSelected && <Check size={14} className="text-accent-600" />}
+                      </div>
+                      <p className="text-[12px] font-caption text-ink-600 leading-snug">
+                        {g.desc}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Nigerian English Workplace Lingo Toggle */}
+            <div className="pt-2 border-t border-border/70 flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-0.5">
+                <span className="font-small-medium text-small font-medium text-ink-900">
+                  Nigerian workshop & site lingo
+                </span>
+                <span className="text-[12px] font-caption text-ink-600 leading-snug">
+                  Naturally include authentic expressions like "followed supervisor to site", "carried out routine servicing", and "collected tools from store".
+                </span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                <input
+                  type="checkbox"
+                  checked={useNigerianLingo}
+                  onChange={(e) => setUseNigerianLingo(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-surface-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600"></div>
+              </label>
+            </div>
+          </section>
+
+          {/* Card 4: Logbook Physical Space & Line Length Constraint */}
           <section className="bg-surface rounded-2xl border border-border p-5 sm:p-6 shadow-[0_1px_3px_rgba(16,24,40,0.04)] flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -380,7 +605,7 @@ export default function OnboardingPage() {
 
             <p className="font-small text-small text-ink-600">
               How many blank lines does your paper logbook have per day? Yarn will
-              strictly fit the AI output into this space so you don't run out of room.
+              strictly fit the AI output into this space so you never run out of room.
             </p>
 
             {/* Preset chips */}
@@ -432,19 +657,19 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Live Paper Logbook Preview Box */}
+            {/* Live Paper Logbook Preview Box with Pronouns */}
             <div className="mt-1 p-4 rounded-xl bg-[#FCFCFD] border border-border flex flex-col gap-2.5">
               <div className="flex items-center justify-between text-caption font-caption-medium text-ink-500 uppercase tracking-wide">
                 <span>Sample paper logbook output preview</span>
                 <span className="text-accent-600 font-semibold">
-                  {selectedProgramObj.name} • {isCustomLineMode ? customLines || "custom" : logLengthLines} lines
+                  {selectedProgramObj.name} • {grammarLevel} • {isCustomLineMode ? customLines || "custom" : logLengthLines} lines
                 </span>
               </div>
               <div className="font-reading text-[13.5px] text-ink-800 leading-[22px] whitespace-pre-line bg-surface p-3.5 rounded-lg border border-border/80 font-mono">
-                {selectedProgramObj.preview}
+                {currentPreviewText}
               </div>
               <span className="text-[11px] text-ink-500 font-caption">
-                Tight, header-free formatting ready to handwrite directly into your physical booklet.
+                Uses active personal sentences with "I" and "We" ready to write into your paper booklet.
               </span>
             </div>
           </section>

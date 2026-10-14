@@ -25,10 +25,13 @@ async function fetchAPI(endpoint, options = {}) {
 export async function createUser({
   name,
   field_of_work,
+  faculty,
   department,
   institution,
   training_type = "siwes",
   log_length_lines = "2-3",
+  grammar_level = "balanced",
+  use_nigerian_lingo = true,
   is_onboarded = false,
 }) {
   try {
@@ -37,10 +40,13 @@ export async function createUser({
       body: JSON.stringify({
         name,
         field_of_work,
+        faculty,
         department,
         institution,
         training_type,
         log_length_lines,
+        grammar_level,
+        use_nigerian_lingo,
         is_onboarded,
       }),
     });
@@ -51,10 +57,13 @@ export async function createUser({
       id: mockUuid,
       name: name || "SIWES Student",
       field_of_work: field_of_work || "General Fieldwork",
-      department: department || "Engineering",
+      faculty: faculty || "Faculty of Technology",
+      department: department || "Mechanical Engineering",
       institution: institution || "University of Technology",
       training_type: training_type || "siwes",
       log_length_lines: log_length_lines || "2-3",
+      grammar_level: grammar_level || "balanced",
+      use_nigerian_lingo: use_nigerian_lingo ?? true,
       is_onboarded: is_onboarded,
       custom_prompt: `Focus on daily technical tasks, equipment calibrated, and challenges faced.`,
       created_at: new Date().toISOString(),
@@ -78,10 +87,13 @@ export async function getUserProfile(uuid) {
       id: uuid,
       name: "Chidi Okafor",
       field_of_work: "Agricultural Engineering - Thermal Imaging",
-      department: "Agricultural Engineering",
+      faculty: "Faculty of Agriculture",
+      department: "Agricultural Economics",
       institution: "FUTA",
       training_type: "siwes",
       log_length_lines: "2-3",
+      grammar_level: "balanced",
+      use_nigerian_lingo: true,
       is_onboarded: true,
       custom_prompt: "Focus on crop temperatures, ambient humidity, equipment setup.",
       created_at: new Date().toISOString(),
@@ -185,6 +197,8 @@ export async function processVoiceInput({
   use_own_key = false,
   training_type,
   log_length_lines,
+  grammar_level,
+  use_nigerian_lingo,
 }) {
   try {
     if (audio_file) {
@@ -194,6 +208,8 @@ export async function processVoiceInput({
       formData.append("use_own_key", String(use_own_key));
       if (training_type) formData.append("training_type", training_type);
       if (log_length_lines) formData.append("log_length_lines", log_length_lines);
+      if (grammar_level) formData.append("grammar_level", grammar_level);
+      if (use_nigerian_lingo !== undefined) formData.append("use_nigerian_lingo", String(use_nigerian_lingo));
 
       const res = await fetch(`${API_BASE_URL}/api/process-voice`, {
         method: "POST",
@@ -213,23 +229,24 @@ export async function processVoiceInput({
           use_own_key,
           training_type,
           log_length_lines,
+          grammar_level,
+          use_nigerian_lingo,
         }),
       });
     }
   } catch (e) {
     // Simulated AI logbook transformation for preview / offline demo
     await new Promise((r) => setTimeout(r, 1200));
-    const snippet = transcript ? transcript.slice(0, 100) : "routine tasks";
     const program = (training_type || "siwes").toLowerCase();
 
     let sampleOutput = "";
     if (program === "swep") {
-      sampleOutput = `• Attended practical workshop session and prepared workpiece under supervision.\n• Practiced bench vise filing and tool alignment with instructor guidance.\n• Measured component tolerance using vernier caliper according to safety rules.`;
+      sampleOutput = `• I attended the workshop safety briefing and we collected our mild steel stock from the store.\n• I operated the manual lathe to turn the workpiece down to 25mm diameter.\n• We checked the finished dimensions against tolerance specs using a vernier caliper.`;
     } else if (program === "it") {
-      sampleOutput = `• Executed system diagnostic routines and monitored operational metrics.\n• Resolved telemetry latency anomalies and documented test results for the engineering team.`;
+      sampleOutput = `• I inspected the primary chiller condenser circuit and we recorded operating pressure differentials.\n• We resolved the fluid flow restriction and I logged the baseline metrics in the handover register.`;
     } else {
       // SIWES default (2-3 lines)
-      sampleOutput = `• Assisted technician with scheduled maintenance checks and equipment inspection.\n• Recorded operating parameters and cleaned tools after field run.`;
+      sampleOutput = `• I assisted the senior technician with scheduled maintenance checks on the primary pump unit.\n• We logged operating suction pressures and I completed the lubricating oil top-up.`;
     }
 
     return {

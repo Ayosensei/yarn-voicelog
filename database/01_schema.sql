@@ -12,10 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url TEXT,                 -- Google profile picture
     name TEXT NOT NULL,
     field_of_work TEXT,              -- e.g. "Civil Engineering - Highway Construction"
+    faculty TEXT,                    -- e.g. "Faculty of Technology"
     department TEXT,                 -- e.g. "Mechanical Engineering"
     institution TEXT,                -- e.g. "FUTA", "UNILAG", "OAU"
     training_type TEXT DEFAULT 'siwes', -- 'swep' (Part 2), 'siwes' (Part 3), 'it' (Part 4)
     log_length_lines TEXT DEFAULT '2-3', -- e.g. '2-3', '2-4', '5-6', or custom
+    grammar_level TEXT DEFAULT 'balanced', -- 'informal', 'balanced', 'formal'
+    use_nigerian_lingo BOOLEAN DEFAULT TRUE, -- Include natural Nigerian technical workplace lingo
     is_onboarded BOOLEAN DEFAULT FALSE,  -- True when post-sign-in setup form completed
     custom_prompt TEXT,              -- User custom instructions for Gemini
     api_key_encrypted TEXT,          -- Encrypted BYOK Gemini/OpenAI key
@@ -31,6 +34,7 @@ CREATE TABLE IF NOT EXISTS logs (
     processed_output TEXT NOT NULL,  -- Structured logbook entry
     training_type TEXT,              -- Historical program snapshot
     log_length_lines TEXT,           -- Historical line length snapshot
+    grammar_level TEXT,              -- Historical grammar tone snapshot
     is_confidential BOOLEAN DEFAULT FALSE,
     audio_file_url TEXT,             -- Supabase Storage link (if uploaded)
     deleted_at TIMESTAMPTZ,          -- Soft-delete timestamp (purged after 7 days)

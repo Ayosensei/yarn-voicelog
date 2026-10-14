@@ -1,12 +1,15 @@
 """
 prompt_builder.py - Assembles the AI prompt dynamically for Nigerian university logbooks.
 
-Tailors output based on student training program:
-  - SWEP (Part 2 / 200L): 5-6 lines default (~60-90 words). Foundational workshop, safety, bench work, practical exercises.
-  - SIWES (Part 3 / 300L): 2-3 lines default (~25-45 words). Compact daily summary, assisting field technicians, maintenance.
-  - IT (Part 4 / 400L): 2-4 lines default (~35-55 words). Professional engineering/industry deliverables, technical workflows.
-
-Allows each student to tweak their target physical logbook line count.
+Tailors output based on:
+  - Student training program:
+    * SWEP (Part 2 / 200L): 5-6 lines default (~60-90 words). Foundational workshop, safety, bench work, practical exercises.
+    * SIWES (Part 3 / 300L): 2-3 lines default (~25-45 words). Compact daily summary, assisting field technicians, maintenance.
+    * IT (Part 4 / 400L): 2-4 lines default (~35-55 words). Professional engineering/industry deliverables, technical workflows.
+  - Target physical logbook line count.
+  - Personal pronouns ('I' and 'We') rather than impersonal fragments.
+  - Grammar level: 'informal' (purely conversational), 'balanced' (standard logbook), 'formal' (academic engineering).
+  - Authentic Nigerian English technical workshop lingo.
 """
 
 PROGRAM_PROFILES = {
@@ -41,14 +44,54 @@ PROGRAM_PROFILES = {
     },
 }
 
+GRAMMAR_PROFILES = {
+    "informal": {
+        "title": "Purely informal & conversational",
+        "guidance": (
+            "Write in natural, everyday, conversational student English—the exact relaxed phrasing a student writes "
+            "when jotting down their daily activities. Use casual but clear sentence structures (e.g., 'I followed my supervisor to site...', 'We worked on...'). "
+            "Avoid overly stiff academic vocabulary."
+        ),
+    },
+    "balanced": {
+        "title": "Balanced / Standard student logbook",
+        "guidance": (
+            "Write in realistic Nigerian student logbook style: a practical blend of technical terminology and natural student voice. "
+            "Clear, direct, and practical without bureaucratic fluff."
+        ),
+    },
+    "formal": {
+        "title": "Formal & academic",
+        "guidance": (
+            "Write in structured, grammatically rigorous technical English suitable for formal engineering reports and academic grading. "
+            "Use precise verbs and formal syntax while maintaining the line count constraint."
+        ),
+    },
+}
+
+NIGERIAN_LINGO_GUIDANCE = (
+    "\nNIGERIAN WORKPLACE & WORKSHOP LINGO (ACTIVE):\n"
+    "- Naturally integrate authentic Nigerian technical workshop, industrial training, and site expressions where appropriate:\n"
+    "  * 'I followed my supervisor to site...'\n"
+    "  * 'We carried out the routine servicing / maintenance of...'\n"
+    "  * 'I assisted my technician / senior engineer to troubleshoot...'\n"
+    "  * 'We collected tools and materials from the workshop store...'\n"
+    "  * 'I took down operating readings...'\n"
+    "  * 'We observed the dry run of the equipment...'\n"
+    "- Keep the tone natural and authentic to Nigerian university logbooks, never exaggerated or caricatured."
+)
+
 
 def build_prompt(
     raw_transcript: str,
     custom_prompt: str | None = None,
     vocabulary_terms: list[str] | None = None,
     field_of_work: str | None = None,
+    department: str | None = None,
     training_type: str | None = "siwes",
     log_length_lines: str | None = None,
+    grammar_level: str | None = "balanced",
+    use_nigerian_lingo: bool | None = True,
 ) -> str:
     """
     Assembles the customized prompt to send to Gemini.
@@ -58,9 +101,12 @@ def build_prompt(
         custom_prompt: The student's custom instructions (from their settings).
         vocabulary_terms: List of technical terms to preserve (e.g., ["FLIR", "CWSI"]).
         field_of_work: The student's field (e.g., "Mechanical Engineering").
+        department: The student's department/course (e.g., "Agricultural and Environmental Engineering").
         training_type: Student's program tier ('swep', 'siwes', 'it'). Defaults to 'siwes'.
         log_length_lines: Specific line count constraint (e.g., '2-3', '2-4', '5-6').
                           If None, defaults to the program tier's standard line length.
+        grammar_level: 'informal', 'balanced', or 'formal'. Defaults to 'balanced'.
+        use_nigerian_lingo: Whether to include natural Nigerian workplace expressions. Defaults to True.
 
     Returns:
         A tailored instruction string ready to send to Gemini.
@@ -68,30 +114,44 @@ def build_prompt(
     program_key = (training_type or "siwes").lower().strip()
     profile = PROGRAM_PROFILES.get(program_key, PROGRAM_PROFILES["siwes"])
 
+    grammar_key = (grammar_level or "balanced").lower().strip()
+    grammar_profile = GRAMMAR_PROFILES.get(grammar_key, GRAMMAR_PROFILES["balanced"])
+
     target_lines = log_length_lines.strip() if log_length_lines else profile["default_lines"]
     if not target_lines.endswith("lines") and not target_lines.endswith("line"):
         target_lines = f"{target_lines} lines"
 
     parts = [
-        f"You are a logbook assistant for Nigerian university engineering and technology students.",
+        f"You are a logbook assistant for Nigerian university students filling out their physical daily logbook.",
         f"The student is enrolled in: {profile['title']}.",
-        f"\nPROGRAM FOCUS & TONE:\n{profile['guidance']}",
+        f"\nPROGRAM FOCUS & CONTEXT:\n{profile['guidance']}",
+        f"\nGRAMMAR & TONE STYLE ({grammar_profile['title'].upper()}):\n{grammar_profile['guidance']}",
+        f"\nPRONOUN & SENTENCE STRUCTURE RULES (MANDATORY):\n"
+        f"- Use complete, natural sentences with first-person personal pronouns ('I' and 'We').\n"
+        f"- Use 'I' for individual tasks the student performed personally (e.g., 'I calibrated...', 'I prepared...', 'I operated...').\n"
+        f"- Use 'We' for joint tasks, team work, or tasks done alongside instructors, technicians, or supervisors (e.g., 'We inspected...', 'We replaced...', 'We measured...').\n"
+        f"- CRITICAL: Do NOT write impersonal fragments starting with bare verbs without pronouns (e.g. NEVER write 'Calibrated the machine...' or 'Checked the oil...'; ALWAYS write 'I calibrated the machine...' or 'We checked the oil...').",
         f"\nPHYSICAL LOGBOOK LINE CONSTRAINT:\n"
         f"- Target length: Exactly {target_lines} of handwriting in the physical logbook.\n"
-        f"- Approximate word limit: {profile['word_budget']}.\n"
+        f"- Approximate word budget: {profile['word_budget']}.\n"
         f"- Format: Write as either 2-3 concise bullet points or a single compact continuous paragraph that fits directly onto the ruled lines of a daily logbook box.\n"
         f"- IMPORTANT: Do NOT include multi-level markdown headers (e.g., '### Activities Performed', '### Tools Used', '### Challenges') because they waste precious lines in a physical logbook. Keep it ready to copy directly into the logbook lines.",
         f"\nCORE RULES:\n"
-        f"- Write in plain, everyday English—a natural mix of practical work notes and largely informal phrasing, exactly like how students write in their physical logbooks.\n"
-        f"- Write in past tense, first person ('Assisted with...', 'Checked...', 'We set up...', 'I calibrated...').\n"
-        f"- Preserve technical terms and slang terms exactly as spoken.\n"
+        f"- Write in past tense, using personal pronouns 'I' and 'We'.\n"
+        f"- Preserve technical terms and equipment names exactly as spoken.\n"
         f"- Do NOT invent details or activities that were not mentioned.\n"
         f"- If key info is missing, use concise [bracket] placeholders (e.g., [equipment model]).",
     ]
 
-    # Add field of work context (if student set one)
+    # Add Nigerian English lingo instructions if enabled
+    if use_nigerian_lingo is not False:
+        parts.append(NIGERIAN_LINGO_GUIDANCE)
+
+    # Add department and field of work context
+    if department:
+        parts.append(f"\nSTUDENT'S DEPARTMENT:\n{department}")
     if field_of_work:
-        parts.append(f"\nSTUDENT'S FIELD OF WORK:\n{field_of_work}")
+        parts.append(f"\nSTUDENT'S FIELD OF WORK / PLACEMENT FOCUS:\n{field_of_work}")
 
     # Add student's custom instructions (if any)
     if custom_prompt:

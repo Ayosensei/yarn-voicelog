@@ -178,3 +178,85 @@ def test_user_onboarding_lifecycle():
     assert profile["institution"] == "FUTA"
     assert profile["is_onboarded"] is True
 
+
+def test_prompt_builder_pronouns_and_grammar_levels():
+    """Verify pronouns (I and We), grammar level selection, and Nigerian lingo in generated prompts."""
+    # 1. Default balanced with Nigerian lingo
+    prompt_balanced = build_prompt(
+        raw_transcript="We serviced the water cooling pump today and replaced the seal.",
+        training_type="siwes",
+        grammar_level="balanced",
+        use_nigerian_lingo=True,
+    )
+    assert "PRONOUN & SENTENCE STRUCTURE RULES" in prompt_balanced
+    assert "'I' and 'We'" in prompt_balanced
+    assert "Do NOT write impersonal fragments starting with bare verbs" in prompt_balanced
+    assert "BALANCED / STANDARD STUDENT LOGBOOK" in prompt_balanced
+    assert "NIGERIAN WORKPLACE & WORKSHOP LINGO (ACTIVE)" in prompt_balanced
+    assert "I followed my supervisor to site" in prompt_balanced
+
+    # 2. Purely informal
+    prompt_informal = build_prompt(
+        raw_transcript="Worked on the lathe with the technician.",
+        training_type="swep",
+        grammar_level="informal",
+        use_nigerian_lingo=True,
+    )
+    assert "PURELY INFORMAL & CONVERSATIONAL" in prompt_informal
+    assert "conversational student English" in prompt_informal
+
+    # 3. Formal academic
+    prompt_formal = build_prompt(
+        raw_transcript="Inspected chiller condenser loops and recorded pressure differentials.",
+        training_type="it",
+        grammar_level="formal",
+        use_nigerian_lingo=False,
+    )
+    assert "FORMAL & ACADEMIC" in prompt_formal
+    assert "NIGERIAN WORKPLACE & WORKSHOP LINGO (ACTIVE)" not in prompt_formal
+
+
+def test_user_api_faculty_and_grammar_fields():
+    """Verify faculty, grammar_level, and use_nigerian_lingo flow through User and Log APIs."""
+    res = client.post(
+        "/api/users",
+        json={
+            "name": "Folashade Adeleke",
+            "faculty": "Faculty of Technology",
+            "department": "Mechanical Engineering",
+            "institution": "OAU",
+            "training_type": "it",
+            "grammar_level": "informal",
+            "use_nigerian_lingo": True,
+        },
+    )
+    assert res.status_code == 200
+    data = res.json()
+    uid = data["id"]
+    assert data["faculty"] == "Faculty of Technology"
+    assert data["grammar_level"] == "informal"
+    assert data["use_nigerian_lingo"] is True
+
+    # Update grammar level to formal
+    patch_res = client.patch(
+        f"/api/users/{uid}",
+        json={"grammar_level": "formal"},
+    )
+    assert patch_res.status_code == 200
+    assert patch_res.json()["grammar_level"] == "formal"
+
+    # Create log with grammar_level snapshot
+    log_res = client.post(
+        "/api/logs",
+        json={
+            "user_id": uid,
+            "date": "2026-10-14",
+            "processed_output": "I inspected the lathe machine and we completed turning operations.",
+            "training_type": "it",
+            "grammar_level": "formal",
+        },
+    )
+    assert log_res.status_code == 200
+    assert log_res.json()["grammar_level"] == "formal"
+
+

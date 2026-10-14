@@ -139,17 +139,30 @@ export default function SingleLogPage() {
             {/* Status Pill */}
             <Badge type="saved" />
             {log.is_confidential && <Badge type="confidential" />}
+            {log.training_type && (
+              <span className="font-caption-medium text-caption px-2 py-0.5 rounded-full bg-accent-50 text-accent-700 border border-accent-200 uppercase">
+                {log.training_type}
+              </span>
+            )}
+            {log.grammar_level && (
+              <span className="font-caption-medium text-caption px-2 py-0.5 rounded-full bg-surface-muted text-ink-600 border border-border capitalize">
+                {log.grammar_level} tone
+              </span>
+            )}
 
             <span className="w-1 h-1 rounded-full bg-ink-400"></span>
             {/* Word Count Metrics */}
             <span className="font-caption text-caption text-ink-600 font-mono tracking-normal">
               {wordCount} words
             </span>
-            <span className="w-1 h-1 rounded-full bg-ink-400"></span>
-            {/* Target Range Indicator */}
-            <span className="font-caption text-caption text-ink-600">
-              Target: 150 to 300 words
-            </span>
+            {log.log_length_lines && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-ink-400"></span>
+                <span className="font-caption text-caption text-ink-600">
+                  Target: {log.log_length_lines} lines
+                </span>
+              </>
+            )}
           </div>
         </section>
 

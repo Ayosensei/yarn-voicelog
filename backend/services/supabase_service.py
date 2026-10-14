@@ -57,10 +57,13 @@ def get_supabase_client() -> Optional[Client]:
 def db_create_user(
     name: str,
     field_of_work: Optional[str] = None,
+    faculty: Optional[str] = None,
     department: Optional[str] = None,
     institution: Optional[str] = None,
     training_type: Optional[str] = "siwes",
     log_length_lines: Optional[str] = "2-3",
+    grammar_level: Optional[str] = "balanced",
+    use_nigerian_lingo: bool = True,
     is_onboarded: bool = False,
 ) -> Dict[str, Any]:
     """Insert a new user into Supabase."""
@@ -71,6 +74,8 @@ def db_create_user(
     payload: Dict[str, Any] = {"name": name}
     if field_of_work is not None:
         payload["field_of_work"] = field_of_work
+    if faculty is not None:
+        payload["faculty"] = faculty
     if department is not None:
         payload["department"] = department
     if institution is not None:
@@ -79,6 +84,9 @@ def db_create_user(
         payload["training_type"] = training_type
     if log_length_lines is not None:
         payload["log_length_lines"] = log_length_lines
+    if grammar_level is not None:
+        payload["grammar_level"] = grammar_level
+    payload["use_nigerian_lingo"] = use_nigerian_lingo
     payload["is_onboarded"] = is_onboarded
 
     res = client.table("users").insert(payload).execute()
@@ -139,6 +147,7 @@ def db_create_log(
     audio_file_url: Optional[str] = None,
     training_type: Optional[str] = None,
     log_length_lines: Optional[str] = None,
+    grammar_level: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Insert a new daily log entry into Supabase."""
     if not is_valid_uuid(user_id):
@@ -163,6 +172,8 @@ def db_create_log(
         payload["training_type"] = training_type
     if log_length_lines is not None:
         payload["log_length_lines"] = log_length_lines
+    if grammar_level is not None:
+        payload["grammar_level"] = grammar_level
 
     res = client.table("logs").insert(payload).execute()
     if res.data and len(res.data) > 0:

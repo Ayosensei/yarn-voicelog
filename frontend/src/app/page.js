@@ -28,6 +28,7 @@ import {
   LogIn,
   CheckCircle2,
   BookOpen,
+  User,
 } from "lucide-react";
 
 import Logo from "@/components/Logo";

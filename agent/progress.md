@@ -10,10 +10,13 @@
 - Resolved Render root directory build issue: added root `requirements.txt`, `.python-version` (3.10.12), and `Procfile`. Pushed commit `ebc06c5` to GitHub `origin/main`.
 - Resolved Vercel 500 MIDDLEWARE_INVOCATION_FAILED error: added environment variable guards and try/catch block to `frontend/src/middleware.js`.
 
+- Slice 5: Backend & AI Engine for SWEP, SIWES, and IT program tiers with customizable line length constraints and 15 passing tests (commit `d001ff1`).
+- Slice 6: Frontend Settings (Program selector & line length tweaker), New Log dynamic tier selector & line override bar, Dashboard badge, and API layer updates. Verified with `npm run build`.
+
 ### Current
-- Slice 1: Database schema, backend Pydantic models, and AI prompt engine for SWEP/SIWES/IT and custom line length
+- Committing frontend changes to git
 
 ### Next
-- Slice 2: Frontend Settings and New Log UI with program selector & line length controls
-- Verify and commit/push after each step to GitHub
+- Push commits to GitHub origin/main when network DNS is clear
+- Mobile & UI testing of program switching on physical devices
 

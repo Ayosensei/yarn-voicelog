@@ -28,13 +28,50 @@ import {
   Info,
   RefreshCw,
   Lock,
+  GraduationCap,
+  Sliders,
 } from "lucide-react";
+
+const PROGRAM_OPTIONS = [
+  {
+    id: "swep",
+    name: "SWEP",
+    level: "Part 2 (200L)",
+    duration: "8–12 weeks",
+    defaultLines: "5-6",
+    desc: "Foundational workshop practicals (lathe, bench work, safety rules).",
+  },
+  {
+    id: "siwes",
+    name: "SIWES",
+    level: "Part 3 (300L)",
+    duration: "3 months",
+    defaultLines: "2-3",
+    desc: "Introductory industrial exposure & routine field duties.",
+  },
+  {
+    id: "it",
+    name: "IT",
+    level: "Part 4 (400L)",
+    duration: "6 months",
+    defaultLines: "2-4",
+    desc: "Substantial professional experience & engineering workflows.",
+  },
+];
+
+const LINE_PRESETS = ["2-3", "2-4", "3-4", "5-6"];
 
 export default function SettingsPage() {
   const params = useParams();
   const userUuid = params.uuid;
 
-  const [profile, setProfile] = useState({ name: "", field_of_work: "", custom_prompt: "" });
+  const [profile, setProfile] = useState({
+    name: "",
+    field_of_work: "",
+    training_type: "siwes",
+    log_length_lines: "2-3",
+    custom_prompt: "",
+  });
   const [vocabulary, setVocabulary] = useState([]);
   const [newTerm, setNewTerm] = useState("");
   const [apiKey, setApiKey] = useState("");
@@ -54,7 +91,13 @@ export default function SettingsPage() {
           getUserProfile(userUuid),
           getUserVocabulary(userUuid),
         ]);
-        setProfile(profData || {});
+        setProfile({
+          name: profData?.name || "",
+          field_of_work: profData?.field_of_work || "",
+          training_type: profData?.training_type || "siwes",
+          log_length_lines: profData?.log_length_lines || "2-3",
+          custom_prompt: profData?.custom_prompt || "",
+        });
         setVocabulary(vocabData || []);
       } catch (err) {
         console.error("Settings load error:", err);
@@ -120,6 +163,8 @@ export default function SettingsPage() {
       await updateUserProfile(userUuid, {
         name: profile.name,
         field_of_work: profile.field_of_work,
+        training_type: profile.training_type || "siwes",
+        log_length_lines: profile.log_length_lines || "2-3",
         custom_prompt: profile.custom_prompt,
         api_key: apiKey ? apiKey.trim() : undefined,
       });
@@ -129,6 +174,22 @@ export default function SettingsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSelectProgram = (progId) => {
+    const selectedProg = PROGRAM_OPTIONS.find((p) => p.id === progId);
+    setProfile((prev) => ({
+      ...prev,
+      training_type: progId,
+      log_length_lines: selectedProg ? selectedProg.defaultLines : prev.log_length_lines,
+    }));
+  };
+
+  const handleSelectLinePreset = (preset) => {
+    setProfile((prev) => ({
+      ...prev,
+      log_length_lines: preset,
+    }));
   };
 
   if (loading) {
@@ -209,7 +270,120 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Card 2: Writing Style Instructions */}
+          {/* Card 2: Training Program & Logbook Format */}
+          <section className="bg-surface rounded-xl border border-border p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)] flex flex-col gap-4">
+            <header className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent-50 flex items-center justify-center shrink-0 text-accent-600">
+                <GraduationCap size={20} />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="font-heading text-heading text-ink-900 font-semibold">
+                  Training program & Logbook format
+                </h2>
+                <p className="font-small text-small text-ink-600">
+                  Select your program stage and customize your physical logbook line constraints.
+                </p>
+              </div>
+            </header>
+
+            {/* Program Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {PROGRAM_OPTIONS.map((prog) => {
+                const isSelected = (profile.training_type || "siwes").toLowerCase() === prog.id;
+                return (
+                  <button
+                    key={prog.id}
+                    type="button"
+                    onClick={() => handleSelectProgram(prog.id)}
+                    className={`p-3.5 rounded-xl border text-left flex flex-col justify-between transition-all active:scale-[0.99] ${
+                      isSelected
+                        ? "border-accent-600 bg-accent-50/50 shadow-sm ring-1 ring-accent-600/30"
+                        : "border-border hover:border-ink-400 bg-surface"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-subheading text-subheading font-semibold text-ink-900">
+                          {prog.name}
+                        </span>
+                        <span
+                          className={`text-[11px] font-caption-medium px-2 py-0.5 rounded-full ${
+                            isSelected
+                              ? "bg-accent-600 text-surface"
+                              : "bg-surface-muted text-ink-600 border border-border"
+                          }`}
+                        >
+                          {prog.level}
+                        </span>
+                      </div>
+                      <p className="text-caption text-ink-600 leading-snug line-clamp-2">
+                        {prog.desc}
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-2.5 border-t border-border/70 flex items-center justify-between text-caption font-medium">
+                      <span className="text-ink-600">Duration: {prog.duration}</span>
+                      <span className="text-accent-700 font-semibold">{prog.defaultLines} lines</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Line Length Tweaker */}
+            <div className="mt-2 pt-3 border-t border-border flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <label className="font-small-medium text-small text-ink-900 font-medium flex items-center gap-1.5">
+                  <Sliders size={16} className="text-accent-600" />
+                  <span>Physical logbook lines per day</span>
+                </label>
+                <span className="text-caption font-caption-medium text-accent-700 bg-accent-50 px-2 py-0.5 rounded-full border border-accent-200">
+                  Target: {profile.log_length_lines || "2-3"} lines
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {LINE_PRESETS.map((preset) => {
+                  const isPresetActive = (profile.log_length_lines || "").trim() === preset;
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => handleSelectLinePreset(preset)}
+                      className={`px-3 py-1.5 rounded-lg text-small font-small-medium transition-all ${
+                        isPresetActive
+                          ? "bg-accent-600 text-surface shadow-sm font-semibold"
+                          : "bg-surface-muted border border-border text-ink-700 hover:border-ink-400"
+                      }`}
+                    >
+                      {preset} lines
+                    </button>
+                  );
+                })}
+
+                <div className="flex items-center gap-1.5 ml-auto">
+                  <span className="text-caption text-ink-600">Custom:</span>
+                  <input
+                    type="text"
+                    aria-label="Custom line count"
+                    value={profile.log_length_lines || ""}
+                    onChange={(e) => setProfile({ ...profile, log_length_lines: e.target.value })}
+                    placeholder="e.g. 4"
+                    className="w-16 h-8 px-2 text-center rounded-lg border border-border bg-surface text-small text-ink-900 focus:outline-none focus:border-accent-600 focus:ring-1 focus:ring-accent-600"
+                  />
+                  <span className="text-caption text-ink-600">lines</span>
+                </div>
+              </div>
+
+              <div className="bg-accent-50 border border-accent-200 rounded-xl p-3 flex items-start gap-2.5 mt-1">
+                <Info size={16} className="text-accent-600 shrink-0 mt-0.5" />
+                <p className="font-small text-small text-ink-900">
+                  Yarn formats your output directly for handwritten physical logbooks (concise bullet points or tight sentences). No oversized headers eating into your paper lines.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Card 3: Writing Style Instructions */}
           <section className="bg-surface rounded-xl border border-border p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)] flex flex-col gap-4">
             <header className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-accent-50 flex items-center justify-center shrink-0 text-accent-600">

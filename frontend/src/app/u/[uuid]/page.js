@@ -64,9 +64,9 @@ export default function DashboardPage() {
             <h1 className="font-title text-title text-ink-900 font-semibold tracking-tight">
               Good morning, {user ? user.name.split(" ")[0] : "Student"}
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-50 text-accent-700 font-caption-medium text-caption">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent-50 text-accent-700 font-caption-medium text-caption uppercase tracking-wide">
               <span className="w-1.5 h-1.5 rounded-full bg-accent-600 animate-pulse"></span>
-              Week 6 • SIWES
+              {user?.training_type ? `${user.training_type.toUpperCase()} • Part ${user.training_type === 'swep' ? '2' : user.training_type === 'siwes' ? '3' : '4'}` : "SIWES • Part 3"}
             </span>
           </div>
           <p className="font-small text-small text-ink-600">

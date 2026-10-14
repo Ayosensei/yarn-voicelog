@@ -22,11 +22,11 @@ async function fetchAPI(endpoint, options = {}) {
 }
 
 // User Services
-export async function createUser({ name, field_of_work }) {
+export async function createUser({ name, field_of_work, training_type = "siwes", log_length_lines = "2-3" }) {
   try {
     return await fetchAPI("/api/users", {
       method: "POST",
-      body: JSON.stringify({ name, field_of_work }),
+      body: JSON.stringify({ name, field_of_work, training_type, log_length_lines }),
     });
   } catch (e) {
     // Local fallback for offline/development mode
@@ -35,6 +35,8 @@ export async function createUser({ name, field_of_work }) {
       id: mockUuid,
       name: name || "SIWES Student",
       field_of_work: field_of_work || "General Fieldwork",
+      training_type: training_type || "siwes",
+      log_length_lines: log_length_lines || "2-3",
       custom_prompt: `Focus on daily technical tasks, equipment calibrated, and challenges faced.`,
       created_at: new Date().toISOString(),
     };
@@ -57,6 +59,8 @@ export async function getUserProfile(uuid) {
       id: uuid,
       name: "Chidi Okafor",
       field_of_work: "Agricultural Engineering - Thermal Imaging",
+      training_type: "siwes",
+      log_length_lines: "2-3",
       custom_prompt: "Focus on crop temperatures, ambient humidity, equipment setup.",
       created_at: new Date().toISOString(),
     };
@@ -152,13 +156,22 @@ export async function restoreLog(logId) {
 }
 
 // Voice Processing AI Service
-export async function processVoiceInput({ user_uuid, transcript, audio_file, use_own_key = false }) {
+export async function processVoiceInput({
+  user_uuid,
+  transcript,
+  audio_file,
+  use_own_key = false,
+  training_type,
+  log_length_lines,
+}) {
   try {
     if (audio_file) {
       const formData = new FormData();
       formData.append("user_uuid", user_uuid);
       formData.append("audio_file", audio_file);
       formData.append("use_own_key", String(use_own_key));
+      if (training_type) formData.append("training_type", training_type);
+      if (log_length_lines) formData.append("log_length_lines", log_length_lines);
 
       const res = await fetch(`${API_BASE_URL}/api/process-voice`, {
         method: "POST",
@@ -172,15 +185,34 @@ export async function processVoiceInput({ user_uuid, transcript, audio_file, use
     } else {
       return await fetchAPI("/api/process-voice", {
         method: "POST",
-        body: JSON.stringify({ user_uuid, transcript, use_own_key }),
+        body: JSON.stringify({
+          user_uuid,
+          transcript,
+          use_own_key,
+          training_type,
+          log_length_lines,
+        }),
       });
     }
   } catch (e) {
-    // Simulated AI logbook transformation for preview
+    // Simulated AI logbook transformation for preview / offline demo
     await new Promise((r) => setTimeout(r, 1200));
+    const snippet = transcript ? transcript.slice(0, 100) : "routine tasks";
+    const program = (training_type || "siwes").toLowerCase();
+
+    let sampleOutput = "";
+    if (program === "swep") {
+      sampleOutput = `• Attended practical workshop session and prepared workpiece under supervision.\n• Practiced bench vise filing and tool alignment with instructor guidance.\n• Measured component tolerance using vernier caliper according to safety rules.`;
+    } else if (program === "it") {
+      sampleOutput = `• Executed system diagnostic routines and monitored operational metrics.\n• Resolved telemetry latency anomalies and documented test results for the engineering team.`;
+    } else {
+      // SIWES default (2-3 lines)
+      sampleOutput = `• Assisted technician with scheduled maintenance checks and equipment inspection.\n• Recorded operating parameters and cleaned tools after field run.`;
+    }
+
     return {
-      processed_text: `### Date & Location\n**Date:** ${new Date().toISOString().split("T")[0]}\n**Location:** Field Operations Base\n\n### Activities Performed\n- Conducted field inspection based on spoken notes: "${transcript.slice(0, 100)}..."\n- Logged operational metrics and verified sample tree data.\n\n### Tools & Equipment Used\n- Handheld Data Logger, Calipers\n\n### Challenges & Learnings\n- High temperature conditions required frequent equipment cool-down pauses.\n\n### Next Steps / Remarks\n- Continue secondary measurements tomorrow morning.`,
-      tokens_used: 184,
+      processed_text: sampleOutput,
+      tokens_used: 120,
     };
   }
 }

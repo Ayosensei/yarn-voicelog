@@ -84,6 +84,31 @@ export async function createUser({
   }
 }
 
+export async function authUser({
+  auth_user_id,
+  email,
+  name,
+  avatar_url,
+  google_id,
+  guest_uuid,
+}) {
+  return await fetchAPI("/api/users/auth", {
+    method: "POST",
+    body: JSON.stringify({
+      auth_user_id,
+      email,
+      name,
+      avatar_url,
+      google_id,
+      guest_uuid,
+    }),
+  });
+}
+
+export async function getUserByAuthId(authUserId) {
+  return await fetchAPI(`/api/users/by-auth/${authUserId}`);
+}
+
 export async function getUserProfile(uuid) {
   try {
     return await fetchAPI(`/api/users/${uuid}`);

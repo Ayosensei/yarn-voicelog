@@ -18,7 +18,8 @@ import {
   Volume2,
 } from "lucide-react";
 
-// Google "G" logo SVG
+import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 function GoogleIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
@@ -208,26 +209,15 @@ function LandingContent() {
       {/* Top Header */}
       <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-md border-b border-border/80 flex justify-center">
         <div className="w-full max-w-[640px] h-14 px-gutter flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C9 20 6.5 18 5.5 15.5"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-            <span className="font-heading text-heading text-ink-900 tracking-tight font-semibold lowercase select-none">
-              yarn
-            </span>
-          </div>
+          <Link href="/" className="flex items-center gap-2">
+            <Logo size={28} showWordmark />
+          </Link>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-caption-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-muted text-ink-700">
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-flex text-[11px] font-caption-medium uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-surface-muted text-ink-700">
               SWEP • SIWES • IT
             </span>
+            <ThemeToggle className="w-8 h-8 p-0 flex items-center justify-center rounded-full" />
           </div>
         </div>
       </header>
@@ -317,7 +307,7 @@ function LandingContent() {
             {/* Comparison Display */}
             <div className="flex flex-col gap-3">
               {/* Spoken Yarn */}
-              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-border/80 flex flex-col gap-1.5">
+              <div className="p-3.5 rounded-xl bg-surface-muted/50 border border-border/80 flex flex-col gap-1.5">
                 <div className="flex items-center gap-1.5 text-caption font-caption-medium text-ink-500 uppercase tracking-wide">
                   <Volume2 size={14} className="text-accent-600" />
                   <span>What you speak</span>

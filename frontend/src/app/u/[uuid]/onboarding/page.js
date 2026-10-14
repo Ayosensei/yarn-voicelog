@@ -25,6 +25,8 @@ import {
   MessageSquare,
   LogOut,
 } from "lucide-react";
+import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const PROGRAM_OPTIONS = [
   {
@@ -313,12 +315,7 @@ export default function OnboardingPage() {
         {/* Brand Header */}
         <header className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-accent-600" />
-              <span className="font-heading text-[17px] font-semibold text-ink-900 tracking-tight lowercase">
-                yarn
-              </span>
-            </div>
+            <Logo size={28} showWordmark />
             <div className="flex items-center gap-2">
               {userEmail && (
                 <span className="text-caption text-ink-500 font-caption hidden sm:inline">
@@ -328,6 +325,7 @@ export default function OnboardingPage() {
               <span className="text-caption font-caption-medium px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
                 Student setup
               </span>
+              <ThemeToggle className="w-8 h-8 p-0 flex items-center justify-center rounded-lg" />
               <button
                 type="button"
                 onClick={handleSignOut}
@@ -336,7 +334,7 @@ export default function OnboardingPage() {
                 className="inline-flex items-center gap-1 text-[12px] font-caption text-ink-500 hover:text-ink-900 px-2 py-1 rounded-lg border border-border hover:bg-surface-muted transition-colors"
               >
                 <LogOut size={13} />
-                <span>Sign out</span>
+                <span className="hidden xs:inline">Sign out</span>
               </button>
             </div>
           </div>

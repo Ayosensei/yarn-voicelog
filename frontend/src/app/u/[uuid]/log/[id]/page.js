@@ -340,7 +340,7 @@ export default function SingleLogPage() {
           <button
             type="button"
             onClick={isEditing ? handleSaveEdit : () => setIsEditing(true)}
-            className="flex-1 h-12 rounded-full bg-accent-600 hover:bg-accent-700 text-surface font-subheading text-subheading shadow-[0_1px_2px_rgba(16,24,40,0.05)] active:scale-[0.98] transition-all flex items-center justify-center gap-space-xs"
+            className="flex-1 h-12 rounded-full bg-accent-600 hover:bg-accent-700 text-white font-subheading text-subheading shadow-[0_1px_2px_rgba(16,24,40,0.05)] active:scale-[0.98] transition-all flex items-center justify-center gap-space-xs"
           >
             {isEditing ? <CheckCircle size={20} /> : <PenLine size={20} />}
             <span>{isEditing ? "Save changes" : "Edit entry"}</span>
@@ -359,7 +359,7 @@ export default function SingleLogPage() {
               type="button"
               disabled={isDeleting}
               onClick={handleDeleteConfirm}
-              className="w-full h-11 rounded-full bg-danger hover:bg-danger/90 text-surface font-subheading text-subheading font-semibold shadow-sm transition-all active:scale-98 flex items-center justify-center"
+              className="w-full h-11 rounded-full bg-danger hover:bg-danger/90 text-white font-subheading text-subheading font-semibold shadow-sm transition-all active:scale-98 flex items-center justify-center"
             >
               {isDeleting ? "Moving to trash..." : "Move to Trash"}
             </button>

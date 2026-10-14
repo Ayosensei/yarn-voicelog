@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { BookText, FileDown, Settings as SettingsIcon, ArrowLeft, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Navbar({ title, showBack = false, userUuid = null, rightAction = null }) {
   const pathname = usePathname();
@@ -22,6 +24,10 @@ export default function Navbar({ title, showBack = false, userUuid = null, right
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("yarn_guest_uuid");
+      document.cookie = "yarn_guest_uuid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
     router.replace("/");
   };
 
@@ -37,71 +43,73 @@ export default function Navbar({ title, showBack = false, userUuid = null, right
   return (
     <>
       {/* Top Header (56px) */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
+      <header className="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-border shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe">
         <div className="h-14 max-w-[640px] mx-auto px-gutter flex items-center justify-between">
-          <div className="flex items-center gap-space-sm">
+          <div className="flex items-center gap-space-sm min-w-0">
             {showBack ? (
               <button
                 onClick={() => router.back()}
                 aria-label="Go back"
-                className="p-1 -ml-1 text-ink-900 active:scale-95 transition-transform"
+                className="p-1.5 -ml-1.5 text-ink-900 hover:bg-surface-muted rounded-full active:scale-95 transition-all shrink-0"
               >
-                <ArrowLeft size={24} />
+                <ArrowLeft size={22} />
               </button>
             ) : (
-              <Link href={baseUrl || "/"} className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C9 20 6.5 18 5.5 15.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                </div>
-                <span className="font-heading text-heading tracking-tight text-ink-900 font-semibold lowercase">yarn</span>
+              <Link href={baseUrl || "/"} className="flex items-center gap-2 shrink-0">
+                <Logo size={28} showWordmark />
               </Link>
             )}
-            {title && showBack && <h1 className="font-subheading text-subheading font-semibold text-ink-900">{title}</h1>}
+            {title && showBack && (
+              <h1 className="font-subheading text-subheading font-semibold text-ink-900 truncate">
+                {title}
+              </h1>
+            )}
           </div>
 
-          <div className="flex items-center gap-space-md relative">
-            {rightAction || (
-              userUuid && user && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowSignOut((v) => !v)}
-                    aria-label="Account menu"
-                    className="w-8 h-8 rounded-full overflow-hidden border-2 border-border hover:border-accent-600 transition-colors focus:outline-none focus:ring-2 focus:ring-accent-600/30 active:scale-95"
-                  >
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt={avatarName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <div className="w-full h-full bg-accent-600 flex items-center justify-center text-surface font-semibold text-xs">
-                        {avatarName[0].toUpperCase()}
-                      </div>
-                    )}
-                  </button>
+          <div className="flex items-center gap-2 relative shrink-0">
+            {rightAction}
 
-                  {/* Sign-out dropdown */}
-                  {showSignOut && (
-                    <>
-                      {/* Backdrop */}
-                      <div className="fixed inset-0 z-40" onClick={() => setShowSignOut(false)} />
-                      <div className="absolute right-0 top-10 z-50 w-44 bg-surface rounded-xl border border-border shadow-[0_4px_20px_rgba(0,0,0,0.1)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                        <div className="px-3 py-2.5 border-b border-border">
-                          <p className="font-caption-medium text-caption text-ink-900 truncate">{user?.user_metadata?.full_name}</p>
-                          <p className="font-caption text-caption text-ink-400 truncate">{user?.email}</p>
-                        </div>
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full px-3 py-2.5 flex items-center gap-2 text-danger font-small text-small hover:bg-danger-bg transition-colors"
-                        >
-                          <LogOut size={16} />
-                          Sign out
-                        </button>
-                      </div>
-                    </>
+            {/* Dark mode switch */}
+            <ThemeToggle className="w-9 h-9 p-0 flex items-center justify-center rounded-full" />
+
+            {userUuid && user && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowSignOut((v) => !v)}
+                  aria-label="Account menu"
+                  className="w-8 h-8 rounded-full overflow-hidden border-2 border-border hover:border-accent-600 transition-colors focus:outline-none focus:ring-2 focus:ring-accent-600/30 active:scale-95"
+                >
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt={avatarName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-full h-full bg-accent-600 flex items-center justify-center text-white font-semibold text-xs">
+                      {avatarName[0].toUpperCase()}
+                    </div>
                   )}
-                </div>
-              )
+                </button>
+
+                {/* Sign-out dropdown */}
+                {showSignOut && (
+                  <>
+                    {/* Backdrop */}
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSignOut(false)} />
+                    <div className="absolute right-0 top-10 z-50 w-48 bg-surface rounded-xl border border-border shadow-[0_4px_20px_rgba(0,0,0,0.15)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                      <div className="px-3 py-2.5 border-b border-border bg-surface-muted/40">
+                        <p className="font-caption-medium text-caption text-ink-900 truncate">{user?.user_metadata?.full_name || "Signed in"}</p>
+                        <p className="font-caption text-caption text-ink-400 truncate">{user?.email}</p>
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full px-3 py-2.5 flex items-center gap-2 text-danger font-small text-small hover:bg-danger-bg transition-colors"
+                      >
+                        <LogOut size={16} />
+                        Sign out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -109,7 +117,7 @@ export default function Navbar({ title, showBack = false, userUuid = null, right
 
       {/* Mobile Bottom Nav */}
       {userUuid && (
-        <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)] block md:hidden">
+        <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/95 backdrop-blur-xl border-t border-border shadow-[0_-2px_12px_rgba(0,0,0,0.06)] block md:hidden">
           <div className="h-16 max-w-[640px] mx-auto px-gutter flex items-center justify-around">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -118,9 +126,11 @@ export default function Navbar({ title, showBack = false, userUuid = null, right
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`min-w-[48px] min-h-[48px] flex flex-col items-center justify-center gap-0.5 transition-colors ${isActive ? "text-accent-600 font-semibold" : "text-ink-600 hover:text-ink-900"}`}
+                  className={`min-w-[48px] min-h-[48px] px-3 flex flex-col items-center justify-center gap-0.5 transition-colors ${
+                    isActive ? "text-accent-600 font-semibold" : "text-ink-600 hover:text-ink-900"
+                  }`}
                 >
-                  <Icon size={24} />
+                  <Icon size={22} />
                   <span className="font-caption text-caption">{item.label}</span>
                 </Link>
               );

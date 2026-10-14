@@ -88,6 +88,9 @@ def build_prompt(
     vocabulary_terms: list[str] | None = None,
     field_of_work: str | None = None,
     department: str | None = None,
+    faculty: str | None = None,
+    institution: str | None = None,
+    student_name: str | None = None,
     training_type: str | None = "siwes",
     log_length_lines: str | None = None,
     grammar_level: str | None = "balanced",
@@ -100,8 +103,11 @@ def build_prompt(
         raw_transcript: What the student actually said (the spoken notes).
         custom_prompt: The student's custom instructions (from their settings).
         vocabulary_terms: List of technical terms to preserve (e.g., ["FLIR", "CWSI"]).
-        field_of_work: The student's field (e.g., "Mechanical Engineering").
+        field_of_work: The student's field/firm (e.g., "Chevron Nigeria / Mechanical Maintenance").
         department: The student's department/course (e.g., "Agricultural and Environmental Engineering").
+        faculty: The student's faculty (e.g., "Faculty of Technology").
+        institution: The university or polytechnic (e.g., "Obafemi Awolowo University").
+        student_name: The student's name for personalize logging context.
         training_type: Student's program tier ('swep', 'siwes', 'it'). Defaults to 'siwes'.
         log_length_lines: Specific line count constraint (e.g., '2-3', '2-4', '5-6').
                           If None, defaults to the program tier's standard line length.
@@ -147,11 +153,25 @@ def build_prompt(
     if use_nigerian_lingo is not False:
         parts.append(NIGERIAN_LINGO_GUIDANCE)
 
-    # Add department and field of work context
+    # Add full student academic and placement context for maximum domain accuracy
+    student_details = []
+    if student_name:
+        student_details.append(f"- Student Name: {student_name}")
+    if institution:
+        student_details.append(f"- Institution / University: {institution}")
+    if faculty:
+        student_details.append(f"- Faculty: {faculty}")
     if department:
-        parts.append(f"\nSTUDENT'S DEPARTMENT:\n{department}")
+        student_details.append(f"- Department / Discipline: {department}")
     if field_of_work:
-        parts.append(f"\nSTUDENT'S FIELD OF WORK / PLACEMENT FOCUS:\n{field_of_work}")
+        student_details.append(f"- Practical Attachment Firm / Workshop / Specialty: {field_of_work}")
+
+    if student_details:
+        parts.append(
+            "\nSTUDENT PROFILE & ATTACHMENT CONTEXT (CRITICAL FOR ACCURACY):\n"
+            + "\n".join(student_details)
+            + "\nUse this context to accurately interpret field-specific terminology, tools, machinery, and daily activities relevant to this discipline and training level."
+        )
 
     # Add student's custom instructions (if any)
     if custom_prompt:

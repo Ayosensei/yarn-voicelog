@@ -664,13 +664,13 @@ export default function ExportPage() {
         </div>
 
         {/* Sticky Floating Action Bar above mobile navigation */}
-        <div className="fixed bottom-16 inset-x-0 z-40 bg-surface/95 backdrop-blur-md shadow-md py-3 px-gutter border-t border-border">
+        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] md:bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-md shadow-md py-3 px-gutter border-t border-border">
           <div className="max-w-[640px] mx-auto w-full">
             <button
               type="button"
               disabled={exporting || selectedCount === 0}
               onClick={handleDownload}
-              className="w-full h-14 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.99] disabled:opacity-50 text-surface font-subheading text-subheading font-semibold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              className="w-full h-14 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.99] disabled:opacity-50 text-white font-subheading text-subheading font-semibold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >
               {exporting ? (
                 <>

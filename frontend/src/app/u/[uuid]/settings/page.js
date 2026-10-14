@@ -35,9 +35,10 @@ import {
   Lock,
   GraduationCap,
   Sliders,
-  Languages,
   Sparkles,
+  Sun,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const PROGRAM_OPTIONS = [
   {
@@ -848,13 +849,33 @@ export default function SettingsPage() {
             </div>
           </section>
 
+          {/* Card 5: Appearance & Theme */}
+          <section className="bg-surface rounded-xl border border-border p-5 shadow-[0_1px_2px_rgba(16,24,40,0.05)] flex flex-col gap-4">
+            <header className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-accent-50 flex items-center justify-center shrink-0 text-accent-600">
+                <Sun size={20} />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="font-heading text-heading text-ink-900 font-semibold">Appearance</h2>
+                <p className="font-small text-small text-ink-600">
+                  Switch between light and dark mode for low-light night logging.
+                </p>
+              </div>
+            </header>
+
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface-muted/40 border border-border">
+              <span className="font-small-medium text-small text-ink-900">Theme</span>
+              <ThemeToggle showLabel />
+            </div>
+          </section>
+
           {/* Sticky Floating Save Bar above mobile navigation bar */}
-          <div className="fixed bottom-16 inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-border shadow-[0_-4px_12px_rgba(16,24,40,0.06)] px-gutter py-3">
+          <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] md:bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur-md border-t border-border shadow-[0_-4px_12px_rgba(16,24,40,0.06)] px-gutter py-3">
             <div className="max-w-[640px] mx-auto">
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full h-[52px] rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.99] text-surface font-subheading text-subheading font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                className="w-full h-[52px] rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.99] text-white font-subheading text-subheading font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
               >
                 {saving ? (
                   <>

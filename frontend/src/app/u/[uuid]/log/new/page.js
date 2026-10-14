@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import MicButton from "@/components/MicButton";
 import Waveform from "@/components/Waveform";
@@ -18,12 +18,14 @@ import {
   Languages,
 } from "lucide-react";
 
-export default function NewLogPage() {
+function NewLogContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const userUuid = params.uuid;
 
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const queryDate = searchParams?.get("date");
+  const [date, setDate] = useState(queryDate || new Date().toISOString().split("T")[0]);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState("idle"); // 'idle' | 'recording' | 'denied'
   const [transcript, setTranscript] = useState("");
@@ -435,7 +437,7 @@ export default function NewLogPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="w-full mt-4 pt-2 flex items-center gap-3">
+        <div className="w-full mt-4 pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {transcript && (
             <button
               type="button"
@@ -443,7 +445,7 @@ export default function NewLogPage() {
                 setTranscript("");
                 setSeconds(0);
               }}
-              className="h-12 px-5 rounded-full bg-surface border border-border text-ink-600 hover:text-ink-900 font-subheading text-subheading active:scale-95 transition-all shadow-sm"
+              className="h-12 px-5 rounded-full bg-surface border border-border text-ink-600 hover:text-ink-900 font-subheading text-subheading active:scale-95 transition-all shadow-sm order-2 sm:order-1"
             >
               Clear
             </button>
@@ -453,7 +455,7 @@ export default function NewLogPage() {
             type="button"
             onClick={handleGenerateLog}
             disabled={isProcessing || (!transcript.trim() && !audioFile)}
-            className="flex-1 h-12 rounded-full bg-accent-600 hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-surface font-subheading text-subheading shadow-[0_2px_8px_rgba(79,70,229,0.25)] active:scale-98 transition-all flex items-center justify-center gap-2 px-5"
+            className="flex-1 h-12 rounded-full bg-accent-600 hover:bg-accent-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-subheading text-subheading shadow-[0_2px_8px_rgba(79,70,229,0.25)] active:scale-98 transition-all flex items-center justify-center gap-2 px-5 order-1 sm:order-2"
             aria-label={audioFile && !transcript.trim() ? `Transcribe ${audioFile.name} and generate log` : "Generate logbook entry"}
           >
             {isProcessing ? (
@@ -470,5 +472,19 @@ export default function NewLogPage() {
 
       <Toast message={toastMessage} isOpen={!!toastMessage} onClose={() => setToastMessage("")} />
     </>
+  );
+}
+
+export default function NewLogPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="w-8 h-8 rounded-full border-[3px] border-accent-600/20 border-t-accent-600 animate-spin" />
+        </div>
+      }
+    >
+      <NewLogContent />
+    </Suspense>
   );
 }

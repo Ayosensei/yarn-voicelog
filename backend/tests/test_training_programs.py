@@ -260,3 +260,27 @@ def test_user_api_faculty_and_grammar_fields():
     assert log_res.json()["grammar_level"] == "formal"
 
 
+def test_prompt_builder_full_user_profile_context():
+    """Verify that all user profile options (name, faculty, department, institution, field_of_work) are injected into the prompt."""
+    prompt = build_prompt(
+        raw_transcript="We ran a test on the concrete cube compression strength.",
+        training_type="siwes",
+        student_name="Ayooluwa Oyebade",
+        institution="Obafemi Awolowo University",
+        faculty="Faculty of Technology",
+        department="Civil Engineering",
+        field_of_work="Julius Berger Construction Site",
+        grammar_level="balanced",
+        use_nigerian_lingo=True,
+    )
+
+    assert "STUDENT PROFILE & ATTACHMENT CONTEXT (CRITICAL FOR ACCURACY):" in prompt
+    assert "- Student Name: Ayooluwa Oyebade" in prompt
+    assert "- Institution / University: Obafemi Awolowo University" in prompt
+    assert "- Faculty: Faculty of Technology" in prompt
+    assert "- Department / Discipline: Civil Engineering" in prompt
+    assert "- Practical Attachment Firm / Workshop / Specialty: Julius Berger Construction Site" in prompt
+    assert "We ran a test on the concrete cube compression strength." in prompt
+
+
+

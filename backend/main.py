@@ -975,9 +975,12 @@ async def process_voice(request: Request):
 
     user, user_vocab = await run_in_threadpool(fetch_user_data, str(user_uuid))
 
+    student_name = user.get("name") if user else None
     custom_prompt = user.get("custom_prompt") if user else None
     field_of_work = user.get("field_of_work") if user else None
     department = user.get("department") if user else None
+    faculty = user.get("faculty") if user else None
+    institution = user.get("institution") if user else None
     training_type = req_training_type or (user.get("training_type") if user else "siwes") or "siwes"
     log_length_lines = req_log_length_lines or (user.get("log_length_lines") if user else None)
     grammar_level = req_grammar_level or (user.get("grammar_level") if user else "balanced") or "balanced"
@@ -998,6 +1001,9 @@ async def process_voice(request: Request):
         vocabulary_terms=user_vocab if user_vocab else None,
         field_of_work=field_of_work,
         department=department,
+        faculty=faculty,
+        institution=institution,
+        student_name=student_name,
         training_type=training_type,
         log_length_lines=log_length_lines,
         grammar_level=grammar_level,

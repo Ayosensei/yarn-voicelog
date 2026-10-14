@@ -5,7 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { createUser } from "@/lib/api";
-import { Mic, Sparkles, Check, RefreshCw, AlertCircle, User, ArrowRight } from "lucide-react";
+import {
+  Mic,
+  Sparkles,
+  Check,
+  RefreshCw,
+  AlertCircle,
+  User,
+  ArrowRight,
+  GraduationCap,
+  AlignLeft,
+  Volume2,
+} from "lucide-react";
 
 // Google "G" logo SVG
 function GoogleIcon() {
@@ -31,6 +42,36 @@ function GoogleIcon() {
   );
 }
 
+const DEMO_PREVIEWS = {
+  swep: {
+    title: "SWEP • Part 2",
+    lines: "5-6 lines",
+    tag: "Workshop & practicals",
+    voice:
+      "“We were in the fitting workshop today. The instructor taught us safety gear protocols, then we used the hacksaw and bench vise to cut mild steel rods to 150mm.”",
+    output:
+      "• Attended safety briefing on workshop rules and PPE requirements in the mechanical fitting shop.\n• Marked out 150mm dimensions on mild steel round stock using vernier height gauge and scriber.\n• Mounted stock in bench vise and performed manual sawing using a 24-TPI hacksaw blade.\n• Checked cut dimensions against tolerance specifications under technician supervision.",
+  },
+  siwes: {
+    title: "SIWES • Part 3",
+    lines: "2-3 lines",
+    tag: "Industrial exposure",
+    voice:
+      "“Went to the primary pump house, monitored suction pressures on pump 2, assisted with oil lubrication.”",
+    output:
+      "• Monitored and logged suction and discharge pressures across primary centrifugal pump units.\n• Assisted maintenance technicians with routine mechanical seal inspection and lubricating oil top-up.",
+  },
+  it: {
+    title: "IT • Part 4",
+    lines: "2-4 lines",
+    tag: "Professional engineering",
+    voice:
+      "“Inspected cooling tower condenser circuit, detected thermal drop across heat exchanger, isolated valve line for preventive flushing.”",
+    output:
+      "• Diagnosed abnormal thermal differential across heat exchanger condenser loops using infrared pyrometer.\n• Isolated primary intake valve and executed chemical descaling flush to restore baseline flow rates.\n• Documented differential pressure measurements in daily station engineering logbook.",
+  },
+};
+
 function LandingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,6 +83,7 @@ function LandingContent() {
   const [guestField, setGuestField] = useState("");
   const [isSubmittingGuest, setIsSubmittingGuest] = useState(false);
   const [savedGuestUuid, setSavedGuestUuid] = useState(null);
+  const [activeDemoTier, setActiveDemoTier] = useState("siwes");
 
   // Check if user is already signed in or has saved guest session
   useEffect(() => {
@@ -56,11 +98,17 @@ function LandingContent() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         // Fetch their Yarn UUID from backend then redirect
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/users/by-auth/${user.id}`)
-          .then((r) => r.ok ? r.json() : null)
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/users/by-auth/${user.id}`
+        )
+          .then((r) => (r.ok ? r.json() : null))
           .then((yarnUser) => {
             if (yarnUser?.id) {
-              router.replace(`/u/${yarnUser.id}`);
+              if (yarnUser.is_onboarded === false) {
+                router.replace(`/u/${yarnUser.id}/onboarding`);
+              } else {
+                router.replace(`/u/${yarnUser.id}`);
+              }
             } else {
               setIsCheckingSession(false);
             }
@@ -88,7 +136,6 @@ function LandingContent() {
       setError("Could not start Google sign-in. Please try again.");
       setIsLoading(false);
     }
-    // If no error, browser will redirect to Google — no further action needed
   };
 
   const handleGuestSubmit = async (e) => {
@@ -104,6 +151,7 @@ function LandingContent() {
       const user = await createUser({
         name: guestName.trim(),
         field_of_work: guestField.trim() || "General Engineering",
+        is_onboarded: false,
       });
 
       if (user?.id) {
@@ -111,7 +159,7 @@ function LandingContent() {
           localStorage.setItem("yarn_guest_uuid", user.id);
           document.cookie = `yarn_guest_uuid=${user.id}; path=/; max-age=31536000; SameSite=Lax`;
         }
-        router.push(`/u/${user.id}`);
+        router.push(`/u/${user.id}/onboarding`);
       } else {
         throw new Error("Could not initialize guest session");
       }
@@ -136,12 +184,14 @@ function LandingContent() {
     );
   }
 
+  const currentDemo = DEMO_PREVIEWS[activeDemoTier];
+
   return (
     <>
       {/* Top Header */}
-      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex justify-center">
-        <div className="w-full max-w-[480px] h-14 px-gutter flex items-center">
-          <div className="flex items-center gap-space-sm">
+      <header className="fixed top-0 w-full z-50 pt-safe bg-surface/90 backdrop-blur-md border-b border-border/80 flex justify-center">
+        <div className="w-full max-w-[640px] h-14 px-gutter flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -156,55 +206,170 @@ function LandingContent() {
               yarn
             </span>
           </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-caption-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-muted text-ink-700">
+              SWEP • SIWES • IT
+            </span>
+          </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col w-full max-w-[480px] mx-auto pt-16 pb-safe px-gutter">
-        <div className="flex flex-col w-full pb-10">
-
+      <main className="flex-1 flex flex-col w-full max-w-[640px] mx-auto pt-20 pb-safe px-gutter">
+        <div className="flex flex-col w-full pb-12 gap-8">
+          
           {/* Hero Section */}
-          <section className="flex flex-col pt-space-lg pb-space-xl">
-            <h1 className="font-hero text-hero text-ink-900 tracking-[-0.02em]">
+          <section className="flex flex-col pt-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-50 border border-accent-200 text-accent-700 text-caption font-caption-medium w-fit mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-600" />
+              Tailored for Nigerian student logbooks
+            </div>
+            <h1 className="font-hero text-hero text-ink-900 tracking-[-0.02em] font-semibold">
               Speak your day!
             </h1>
-            <p className="font-body text-body text-ink-600 mt-space-sm max-w-[420px]">
-              Talk through what you did at work today. Yarn turns it into a clear logbook entry in simple English.
+            <p className="font-body text-body text-ink-600 mt-2 max-w-[540px]">
+              Speak what you did at work or in the workshop. Yarn formats your daily entry to fit your physical paper logbook's exact lines.
             </p>
+
+            {/* Program Tiers Pill Row */}
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              <span className="text-caption font-caption-medium px-2.5 py-1 rounded-lg bg-surface border border-border text-ink-800">
+                SWEP (Part 2) • 5–6 lines
+              </span>
+              <span className="text-caption font-caption-medium px-2.5 py-1 rounded-lg bg-surface border border-border text-ink-800">
+                SIWES (Part 3) • 2–3 lines
+              </span>
+              <span className="text-caption font-caption-medium px-2.5 py-1 rounded-lg bg-surface border border-border text-ink-800">
+                IT (Part 4) • 2–4 lines
+              </span>
+            </div>
           </section>
 
-          {/* How It Works: 3-step row */}
-          <section className="flex items-center justify-between w-full py-space-md mb-space-2xl">
-            <div className="flex flex-col items-center text-center flex-1">
-              <div className="w-10 h-10 rounded-full bg-accent-50 flex items-center justify-center text-accent-600 mb-1">
-                <Mic size={20} />
+          {/* Interactive Comparison Preview Card */}
+          <section className="bg-surface rounded-2xl p-5 sm:p-6 border border-border shadow-[0_1px_3px_rgba(16,24,40,0.04)] flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <AlignLeft size={18} className="text-accent-600" />
+                <h3 className="font-subheading text-subheading font-semibold text-ink-900">
+                  See how output adapts to your level
+                </h3>
               </div>
-              <span className="font-small-medium text-small-medium text-ink-900">Speak</span>
+              <span className="text-caption text-ink-500 font-caption">
+                Matches physical logbook lines
+              </span>
             </div>
-            <div className="flex-1 px-1 flex items-center justify-center mb-5">
-              <div className="w-full border-t border-dotted border-border-strong"></div>
+
+            {/* Program Level Toggle Tabs */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-surface-muted rounded-xl">
+              <button
+                type="button"
+                onClick={() => setActiveDemoTier("swep")}
+                className={`py-2 px-2 rounded-lg text-caption font-caption-medium text-center transition-all cursor-pointer ${
+                  activeDemoTier === "swep"
+                    ? "bg-surface text-ink-900 shadow-sm font-semibold"
+                    : "text-ink-600 hover:text-ink-900"
+                }`}
+              >
+                SWEP (Part 2)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDemoTier("siwes")}
+                className={`py-2 px-2 rounded-lg text-caption font-caption-medium text-center transition-all cursor-pointer ${
+                  activeDemoTier === "siwes"
+                    ? "bg-surface text-ink-900 shadow-sm font-semibold"
+                    : "text-ink-600 hover:text-ink-900"
+                }`}
+              >
+                SIWES (Part 3)
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDemoTier("it")}
+                className={`py-2 px-2 rounded-lg text-caption font-caption-medium text-center transition-all cursor-pointer ${
+                  activeDemoTier === "it"
+                    ? "bg-surface text-ink-900 shadow-sm font-semibold"
+                    : "text-ink-600 hover:text-ink-900"
+                }`}
+              >
+                IT (Part 4)
+              </button>
             </div>
-            <div className="flex flex-col items-center text-center flex-1">
-              <div className="w-10 h-10 rounded-full bg-accent-50 flex items-center justify-center text-accent-600 mb-1">
-                <Sparkles size={20} />
+
+            {/* Comparison Display */}
+            <div className="flex flex-col gap-3">
+              {/* Spoken Yarn */}
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-border/80 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-caption font-caption-medium text-ink-500 uppercase tracking-wide">
+                  <Volume2 size={14} className="text-accent-600" />
+                  <span>What you speak</span>
+                </div>
+                <p className="font-body text-[13.5px] text-ink-700 italic">
+                  {currentDemo.voice}
+                </p>
               </div>
-              <span className="font-small-medium text-small-medium text-ink-900">Yarn writes it</span>
-            </div>
-            <div className="flex-1 px-1 flex items-center justify-center mb-5">
-              <div className="w-full border-t border-dotted border-border-strong"></div>
-            </div>
-            <div className="flex flex-col items-center text-center flex-1">
-              <div className="w-10 h-10 rounded-full bg-accent-50 flex items-center justify-center text-accent-600 mb-1">
-                <Check size={20} />
+
+              {/* Formatted Output */}
+              <div className="p-3.5 rounded-xl bg-surface border border-border flex flex-col gap-1.5 shadow-[0_1px_2px_rgba(16,24,40,0.02)]">
+                <div className="flex items-center justify-between text-caption font-caption-medium">
+                  <span className="text-ink-500 uppercase tracking-wide">
+                    What Yarn writes into your logbook
+                  </span>
+                  <span className="text-accent-700 font-semibold bg-accent-50 px-2 py-0.5 rounded-full">
+                    {currentDemo.lines}
+                  </span>
+                </div>
+                <div className="font-mono text-[13px] text-ink-900 leading-[22px] whitespace-pre-line pt-1">
+                  {currentDemo.output}
+                </div>
               </div>
-              <span className="font-small-medium text-small-medium text-ink-900">Review & save</span>
+            </div>
+          </section>
+
+          {/* 3-Step Process */}
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 rounded-xl bg-surface border border-border flex flex-col gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
+                <Mic size={18} />
+              </div>
+              <h4 className="font-subheading text-subheading font-semibold text-ink-900">
+                1. Speak freely
+              </h4>
+              <p className="font-caption text-caption text-ink-600 leading-relaxed">
+                Talk in English or Nigerian Pidgin. Mention your tools, tasks, and what happened today.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface border border-border flex flex-col gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
+                <Sparkles size={18} />
+              </div>
+              <h4 className="font-subheading text-subheading font-semibold text-ink-900">
+                2. Formatted for paper
+              </h4>
+              <p className="font-caption text-caption text-ink-600 leading-relaxed">
+                No bulky headers. Strictly tailored to your program level and paper line constraints.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface border border-border flex flex-col gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent-50 flex items-center justify-center text-accent-600">
+                <Check size={18} />
+              </div>
+              <h4 className="font-subheading text-subheading font-semibold text-ink-900">
+                3. Copy & write down
+              </h4>
+              <p className="font-caption text-caption text-ink-600 leading-relaxed">
+                Copy with one tap and pen it right into your physical logbook before your supervisor signs.
+              </p>
             </div>
           </section>
 
           {/* Sign-In Card */}
-          <section className="bg-surface rounded-2xl p-space-xl border border-border shadow-[0_1px_2px_rgba(16,24,40,0.05)] flex flex-col gap-space-lg">
+          <section className="bg-surface rounded-2xl p-5 sm:p-6 border border-border shadow-[0_1px_3px_rgba(16,24,40,0.04)] flex flex-col gap-5">
             <div>
-              <h2 className="font-heading text-heading text-ink-900">
+              <h2 className="font-heading text-heading text-ink-900 font-semibold">
                 Start your logbook
               </h2>
               <p className="font-small text-small text-ink-600 mt-1">
@@ -226,7 +391,7 @@ function LandingContent() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
-              className="w-full h-14 rounded-full bg-surface border-2 border-border-strong hover:border-accent-600 hover:bg-accent-50 active:scale-[0.98] text-ink-900 font-subheading text-subheading font-semibold transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-[52px] rounded-xl bg-surface border-2 border-border-strong hover:border-accent-600 hover:bg-accent-50/40 active:scale-[0.99] text-ink-900 font-subheading text-subheading font-semibold transition-all flex items-center justify-center gap-3 cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -246,7 +411,7 @@ function LandingContent() {
               <button
                 type="button"
                 onClick={handleResumeGuest}
-                className="w-full h-11 rounded-full bg-surface-muted hover:bg-border text-ink-900 font-small text-small font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full h-11 rounded-xl bg-surface-muted hover:bg-border text-ink-900 font-small text-small font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Resume previous guest session</span>
                 <ArrowRight size={16} />
@@ -265,7 +430,7 @@ function LandingContent() {
               <button
                 type="button"
                 onClick={() => setIsGuestOpen(true)}
-                className="text-center font-small text-small text-ink-600 hover:text-ink-900 font-medium py-1 transition-colors"
+                className="text-center font-small text-small text-ink-600 hover:text-ink-900 font-medium py-1 transition-colors cursor-pointer"
               >
                 Continue as guest without account →
               </button>
@@ -278,7 +443,7 @@ function LandingContent() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Chidi Okafor"
+                    placeholder="e.g. Babatunde Adeyemi"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
                     className="w-full h-11 px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body outline-none focus:ring-2 focus:ring-accent-600"
@@ -300,7 +465,7 @@ function LandingContent() {
                   <button
                     type="submit"
                     disabled={isSubmittingGuest}
-                    className="flex-1 h-12 rounded-full bg-ink-900 hover:bg-ink-900/90 text-white font-small text-small font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 h-11 rounded-xl bg-ink-900 hover:bg-ink-800 text-white font-small text-small font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                   >
                     {isSubmittingGuest ? (
                       <RefreshCw size={16} className="animate-spin" />
@@ -311,7 +476,7 @@ function LandingContent() {
                   <button
                     type="button"
                     onClick={() => setIsGuestOpen(false)}
-                    className="px-4 h-12 rounded-full border border-border hover:bg-surface-muted text-ink-600 font-small text-small transition-colors"
+                    className="px-4 h-11 rounded-xl border border-border hover:bg-surface-muted text-ink-600 font-small text-small transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -320,7 +485,7 @@ function LandingContent() {
             )}
 
             <p className="text-center font-caption text-caption text-ink-400">
-              Your logbook is private. We never share your data.
+              Your logbook is private. We never sell your voice or transcripts.
             </p>
 
             <footer className="pt-2 flex items-center justify-center gap-3 text-xs text-ink-400">

@@ -21,9 +21,12 @@ from uuid import UUID
 class UserCreate(BaseModel):
     """What the frontend sends when creating a new user."""
     name: str                              # Required: student's name
-    field_of_work: str | None = None       # Optional: "Electrical Engineering", etc.
+    field_of_work: str | None = None       # Optional: "Highway Construction", etc.
+    department: str | None = None          # Optional: "Civil Engineering", etc.
+    institution: str | None = None         # Optional: "FUTA", "UNILAG", etc.
     training_type: str | None = "siwes"    # 'swep' (Part 2), 'siwes' (Part 3), 'it' (Part 4)
     log_length_lines: str | None = "2-3"   # e.g. '2-3', '2-4', '5-6', or custom count
+    is_onboarded: bool = False             # Onboarding setup completed?
 
 
 class UserUpdate(BaseModel):
@@ -32,8 +35,11 @@ class UserUpdate(BaseModel):
     custom_prompt: str | None = None       # Their custom AI instructions
     api_key: str | None = None             # Their own Gemini key (BYOK)
     field_of_work: str | None = None       # Update field of work
+    department: str | None = None          # Update department / course
+    institution: str | None = None         # Update university / polytechnic
     training_type: str | None = None       # Update training program
     log_length_lines: str | None = None    # Update log length constraint
+    is_onboarded: bool | None = None       # Mark onboarding as completed
 
 
 class UserResponse(BaseModel):
@@ -41,8 +47,11 @@ class UserResponse(BaseModel):
     id: str
     name: str
     field_of_work: str | None = None
+    department: str | None = None
+    institution: str | None = None
     training_type: str | None = "siwes"
     log_length_lines: str | None = "2-3"
+    is_onboarded: bool = False
     custom_prompt: str | None = None
     has_own_key: bool = False              # Indicates if BYOK personal API key is configured
     created_at: datetime | None = None

@@ -14,10 +14,13 @@
 - Slice 6: Frontend Settings (Program selector & line length tweaker), New Log dynamic tier selector & line override bar, Dashboard badge, and API layer updates. Verified with `npm run build` (commit `944f2d5`).
 - Pushed all commits to GitHub `origin/main` (`6e8907b..944f2d5`).
 
+- Slice 7: Post-sign-in onboarding form (`/u/[uuid]/onboarding`), Settings profile parity (`department`, `institution`, `field_of_work`, `training_type`, `log_length_lines`), Landing Page interactive SWEP/SIWES/IT comparison preview, calm utilitarian UI boost (zero purple gradients), and backend onboarding lifecycle test (16 passing tests). Verified with `npm run build`.
+
 ### Current
-- Deployed to GitHub `origin/main` (triggers Vercel & Render builds)
+- Pushing Slice 7 to GitHub `origin/main`
 
 ### Next
-- Test live generation across SWEP, SIWES, and IT on mobile / web
+- Live testing on mobile / web
 - Collect student feedback on physical logbook fit
+
 

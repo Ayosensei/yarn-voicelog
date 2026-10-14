@@ -44,3 +44,9 @@ Reversible? Hard (hosting provider + deployment configuration + environment secr
 Decision: Differentiate logbook output by training program (SWEP Part 2: 5-6 lines foundational workshop focus; SIWES Part 3: 2-3 lines compact industry summary; IT Part 4: 2-4 lines professional engineering focus), with user ability to tweak line length.
 Why (user's words): "The IT logbook has space for about 2-4 lines for each weekday. The SWEP one has about 5-6 lines. The IT logbook has about 2-4 lines also. There should be an option for each user to tweak the length of the output based on their own program"
 Reversible? Medium (data model columns + prompt builder rules + UI controls).
+
+### 2026-10-14 — Post-sign-in onboarding form & strictly grounded Calm Utilitarian UI
+Decision: Introduce an onboarding form right after sign-in collecting Name, Department, Institution, Training Program/Level, and Logbook line constraint, with all fields synchronized and accessible/editable anytime in Settings/Profile. Strictly avoid AI-looking purple/violet gradients in favor of Yarn's clean, tactile Calm Utilitarian aesthetic (solid white surfaces, crisp borders, dark typography, single functional indigo accent).
+Why (user's words): "1. Let's boost the UI to make it more visually appealing, no sloppy AI designs tho, iterate based on the current UI. 2. We can add a form immediately after users sign in, where we ask the necessary info like their names, department, level & program, etc. stuff like that. No AI-looking gradients tho, all those purple-ish gradients. Big NO!. For users that have signed in, they should be able to access the info from the sign in form in their settings/profile"
+Reversible? Medium (data model additions + onboarding route flow + settings UI sync).
+

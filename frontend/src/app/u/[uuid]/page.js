@@ -27,6 +27,10 @@ export default function DashboardPage() {
           getUserProfile(userUuid),
           getUserLogs(userUuid),
         ]);
+        if (userData && userData.is_onboarded === false) {
+          router.replace(`/u/${userUuid}/onboarding`);
+          return;
+        }
         setUser(userData);
         setLogs(logsData || []);
       } catch (err) {
@@ -36,7 +40,7 @@ export default function DashboardPage() {
       }
     }
     loadData();
-  }, [userUuid]);
+  }, [userUuid, router]);
 
   const loggedDates = logs.map((l) => l.date);
 
@@ -70,7 +74,8 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="font-small text-small text-ink-600">
-            You've logged {logs.length} days this week.
+            {user?.department ? `${user.department}${user?.institution ? ` (${user.institution})` : ''} • ` : ''}
+            You've logged {logs.length} {logs.length === 1 ? "day" : "days"} this week.
           </p>
         </section>
 

@@ -129,3 +129,52 @@ def test_log_creation_snapshots_training_type():
     log_data = create_log_res.json()
     assert log_data["training_type"] == "swep"
     assert log_data["log_length_lines"] == "5-6"
+
+
+def test_user_onboarding_lifecycle():
+    """Verify onboarding fields (department, institution, is_onboarded) flow properly through user CRUD."""
+    # 1. Create a fresh user with onboarding fields
+    create_res = client.post(
+        "/api/users",
+        json={
+            "name": "Chukwuemeka Okonkwo",
+            "department": "Mechanical Engineering",
+            "institution": "FUTA",
+            "training_type": "it",
+            "log_length_lines": "2-4",
+            "field_of_work": "Turbomachinery Maintenance",
+            "is_onboarded": False,
+        },
+    )
+    assert create_res.status_code == 200
+    user_data = create_res.json()
+    uid = user_data["id"]
+    assert user_data["name"] == "Chukwuemeka Okonkwo"
+    assert user_data["department"] == "Mechanical Engineering"
+    assert user_data["institution"] == "FUTA"
+    assert user_data["training_type"] == "it"
+    assert user_data["log_length_lines"] == "2-4"
+    assert user_data["is_onboarded"] is False
+
+    # 2. Complete onboarding via PATCH
+    patch_res = client.patch(
+        f"/api/users/{uid}",
+        json={
+            "department": "Mechatronics Engineering",
+            "is_onboarded": True,
+        },
+    )
+    assert patch_res.status_code == 200
+    patched = patch_res.json()
+    assert patched["department"] == "Mechatronics Engineering"
+    assert patched["institution"] == "FUTA"
+    assert patched["is_onboarded"] is True
+
+    # 3. Retrieve user profile
+    get_res = client.get(f"/api/users/{uid}")
+    assert get_res.status_code == 200
+    profile = get_res.json()
+    assert profile["department"] == "Mechatronics Engineering"
+    assert profile["institution"] == "FUTA"
+    assert profile["is_onboarded"] is True
+

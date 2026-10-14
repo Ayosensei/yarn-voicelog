@@ -22,11 +22,27 @@ async function fetchAPI(endpoint, options = {}) {
 }
 
 // User Services
-export async function createUser({ name, field_of_work, training_type = "siwes", log_length_lines = "2-3" }) {
+export async function createUser({
+  name,
+  field_of_work,
+  department,
+  institution,
+  training_type = "siwes",
+  log_length_lines = "2-3",
+  is_onboarded = false,
+}) {
   try {
     return await fetchAPI("/api/users", {
       method: "POST",
-      body: JSON.stringify({ name, field_of_work, training_type, log_length_lines }),
+      body: JSON.stringify({
+        name,
+        field_of_work,
+        department,
+        institution,
+        training_type,
+        log_length_lines,
+        is_onboarded,
+      }),
     });
   } catch (e) {
     // Local fallback for offline/development mode
@@ -35,8 +51,11 @@ export async function createUser({ name, field_of_work, training_type = "siwes",
       id: mockUuid,
       name: name || "SIWES Student",
       field_of_work: field_of_work || "General Fieldwork",
+      department: department || "Engineering",
+      institution: institution || "University of Technology",
       training_type: training_type || "siwes",
       log_length_lines: log_length_lines || "2-3",
+      is_onboarded: is_onboarded,
       custom_prompt: `Focus on daily technical tasks, equipment calibrated, and challenges faced.`,
       created_at: new Date().toISOString(),
     };
@@ -59,8 +78,11 @@ export async function getUserProfile(uuid) {
       id: uuid,
       name: "Chidi Okafor",
       field_of_work: "Agricultural Engineering - Thermal Imaging",
+      department: "Agricultural Engineering",
+      institution: "FUTA",
       training_type: "siwes",
       log_length_lines: "2-3",
+      is_onboarded: true,
       custom_prompt: "Focus on crop temperatures, ambient humidity, equipment setup.",
       created_at: new Date().toISOString(),
     };

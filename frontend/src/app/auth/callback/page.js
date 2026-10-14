@@ -80,7 +80,12 @@ export default function AuthCallbackPage() {
           document.cookie = "yarn_guest_uuid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
 
-        router.replace(`/u/${yarnUser.id}`);
+        // Redirect to onboarding if profile is not yet onboarded
+        if (!yarnUser.is_onboarded) {
+          router.replace(`/u/${yarnUser.id}/onboarding`);
+        } else {
+          router.replace(`/u/${yarnUser.id}`);
+        }
       } catch (err) {
         console.error("User creation error:", err);
         router.replace("/?message=Account+setup+failed.+Please+try+again.");

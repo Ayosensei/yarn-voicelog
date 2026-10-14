@@ -67,6 +67,8 @@ export default function SettingsPage() {
 
   const [profile, setProfile] = useState({
     name: "",
+    department: "",
+    institution: "",
     field_of_work: "",
     training_type: "siwes",
     log_length_lines: "2-3",
@@ -93,6 +95,8 @@ export default function SettingsPage() {
         ]);
         setProfile({
           name: profData?.name || "",
+          department: profData?.department || "",
+          institution: profData?.institution || "",
           field_of_work: profData?.field_of_work || "",
           training_type: profData?.training_type || "siwes",
           log_length_lines: profData?.log_length_lines || "2-3",
@@ -162,6 +166,8 @@ export default function SettingsPage() {
     try {
       await updateUserProfile(userUuid, {
         name: profile.name,
+        department: profile.department,
+        institution: profile.institution,
         field_of_work: profile.field_of_work,
         training_type: profile.training_type || "siwes",
         log_length_lines: profile.log_length_lines || "2-3",
@@ -252,6 +258,36 @@ export default function SettingsPage() {
                   required
                   className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-dept">
+                    Department / course
+                  </label>
+                  <input
+                    id="profile-dept"
+                    type="text"
+                    value={profile.department || ""}
+                    onChange={(e) => setProfile({ ...profile, department: e.target.value })}
+                    placeholder="e.g. Mechanical Engineering"
+                    className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-small-medium text-small text-ink-900 font-medium" htmlFor="profile-institution">
+                    Institution
+                  </label>
+                  <input
+                    id="profile-institution"
+                    type="text"
+                    value={profile.institution || ""}
+                    onChange={(e) => setProfile({ ...profile, institution: e.target.value })}
+                    placeholder="e.g. FUTA, UNILAG, OAU"
+                    className="h-[52px] w-full px-4 rounded-xl border border-border-strong bg-surface text-ink-900 font-body text-body focus:outline-none focus:border-accent-600 focus:ring-2 focus:ring-accent-200 transition-all"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-1.5">

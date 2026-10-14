@@ -57,8 +57,11 @@ def get_supabase_client() -> Optional[Client]:
 def db_create_user(
     name: str,
     field_of_work: Optional[str] = None,
+    department: Optional[str] = None,
+    institution: Optional[str] = None,
     training_type: Optional[str] = "siwes",
     log_length_lines: Optional[str] = "2-3",
+    is_onboarded: bool = False,
 ) -> Dict[str, Any]:
     """Insert a new user into Supabase."""
     client = get_supabase_client()
@@ -68,10 +71,15 @@ def db_create_user(
     payload: Dict[str, Any] = {"name": name}
     if field_of_work is not None:
         payload["field_of_work"] = field_of_work
+    if department is not None:
+        payload["department"] = department
+    if institution is not None:
+        payload["institution"] = institution
     if training_type is not None:
         payload["training_type"] = training_type
     if log_length_lines is not None:
         payload["log_length_lines"] = log_length_lines
+    payload["is_onboarded"] = is_onboarded
 
     res = client.table("users").insert(payload).execute()
     if res.data and len(res.data) > 0:

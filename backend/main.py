@@ -125,8 +125,11 @@ def create_user(user: UserCreate):
             created = db_create_user(
                 name=user.name,
                 field_of_work=user.field_of_work,
+                department=user.department,
+                institution=user.institution,
                 training_type=user.training_type or "siwes",
                 log_length_lines=user.log_length_lines or "2-3",
+                is_onboarded=user.is_onboarded,
             )
             uid = str(created["id"])
             # Mirror to in-memory store
@@ -135,8 +138,11 @@ def create_user(user: UserCreate):
                 "id": uid,
                 "name": created["name"],
                 "field_of_work": created.get("field_of_work"),
+                "department": created.get("department"),
+                "institution": created.get("institution"),
                 "training_type": created.get("training_type") or "siwes",
                 "log_length_lines": created.get("log_length_lines") or "2-3",
+                "is_onboarded": created.get("is_onboarded", False),
                 "custom_prompt": created.get("custom_prompt"),
                 "has_own_key": bool(created.get("api_key_encrypted")),
                 "created_at": created.get("created_at"),
@@ -150,8 +156,11 @@ def create_user(user: UserCreate):
         "id": user_id,
         "name": user.name,
         "field_of_work": user.field_of_work,
+        "department": user.department,
+        "institution": user.institution,
         "training_type": user.training_type or "siwes",
         "log_length_lines": user.log_length_lines or "2-3",
+        "is_onboarded": user.is_onboarded,
         "custom_prompt": None,
         "api_key_encrypted": None,
         "created_at": None,
@@ -161,8 +170,11 @@ def create_user(user: UserCreate):
         "id": new_user["id"],
         "name": new_user["name"],
         "field_of_work": new_user["field_of_work"],
+        "department": new_user["department"],
+        "institution": new_user["institution"],
         "training_type": new_user["training_type"],
         "log_length_lines": new_user["log_length_lines"],
+        "is_onboarded": new_user["is_onboarded"],
         "custom_prompt": new_user["custom_prompt"],
         "has_own_key": False,
         "created_at": new_user["created_at"],
@@ -182,8 +194,11 @@ def get_user(user_uuid: str):
                     "id": str(user["id"]),
                     "name": user["name"],
                     "field_of_work": user.get("field_of_work"),
+                    "department": user.get("department"),
+                    "institution": user.get("institution"),
                     "training_type": user.get("training_type") or "siwes",
                     "log_length_lines": user.get("log_length_lines") or "2-3",
+                    "is_onboarded": user.get("is_onboarded", False),
                     "custom_prompt": user.get("custom_prompt"),
                     "has_own_key": bool(user.get("api_key_encrypted")),
                     "created_at": user.get("created_at"),
@@ -199,8 +214,11 @@ def get_user(user_uuid: str):
         "id": user["id"],
         "name": user["name"],
         "field_of_work": user.get("field_of_work"),
+        "department": user.get("department"),
+        "institution": user.get("institution"),
         "training_type": user.get("training_type") or "siwes",
         "log_length_lines": user.get("log_length_lines") or "2-3",
+        "is_onboarded": user.get("is_onboarded", False),
         "custom_prompt": user.get("custom_prompt"),
         "has_own_key": bool(user.get("api_key_encrypted")),
         "created_at": user.get("created_at"),
@@ -221,10 +239,16 @@ def update_user(user_uuid: str, updates: UserUpdate):
                 db_updates["name"] = updates.name
             if updates.field_of_work is not None:
                 db_updates["field_of_work"] = updates.field_of_work
+            if updates.department is not None:
+                db_updates["department"] = updates.department
+            if updates.institution is not None:
+                db_updates["institution"] = updates.institution
             if updates.training_type is not None:
                 db_updates["training_type"] = updates.training_type
             if updates.log_length_lines is not None:
                 db_updates["log_length_lines"] = updates.log_length_lines
+            if updates.is_onboarded is not None:
+                db_updates["is_onboarded"] = updates.is_onboarded
             if updates.custom_prompt is not None:
                 db_updates["custom_prompt"] = updates.custom_prompt
             if updates.api_key is not None:
@@ -238,8 +262,11 @@ def update_user(user_uuid: str, updates: UserUpdate):
                     "id": str(updated["id"]),
                     "name": updated["name"],
                     "field_of_work": updated.get("field_of_work"),
+                    "department": updated.get("department"),
+                    "institution": updated.get("institution"),
                     "training_type": updated.get("training_type") or "siwes",
                     "log_length_lines": updated.get("log_length_lines") or "2-3",
+                    "is_onboarded": updated.get("is_onboarded", False),
                     "custom_prompt": updated.get("custom_prompt"),
                     "has_own_key": bool(updated.get("api_key_encrypted")),
                     "created_at": updated.get("created_at"),
@@ -258,10 +285,16 @@ def update_user(user_uuid: str, updates: UserUpdate):
         user["custom_prompt"] = updates.custom_prompt
     if updates.field_of_work is not None:
         user["field_of_work"] = updates.field_of_work
+    if updates.department is not None:
+        user["department"] = updates.department
+    if updates.institution is not None:
+        user["institution"] = updates.institution
     if updates.training_type is not None:
         user["training_type"] = updates.training_type
     if updates.log_length_lines is not None:
         user["log_length_lines"] = updates.log_length_lines
+    if updates.is_onboarded is not None:
+        user["is_onboarded"] = updates.is_onboarded
 
     if updates.api_key is not None:
         raw_key = updates.api_key.strip()
@@ -274,8 +307,11 @@ def update_user(user_uuid: str, updates: UserUpdate):
         "id": user["id"],
         "name": user["name"],
         "field_of_work": user.get("field_of_work"),
+        "department": user.get("department"),
+        "institution": user.get("institution"),
         "training_type": user.get("training_type") or "siwes",
         "log_length_lines": user.get("log_length_lines") or "2-3",
+        "is_onboarded": user.get("is_onboarded", False),
         "custom_prompt": user.get("custom_prompt"),
         "has_own_key": bool(user.get("api_key_encrypted")),
         "created_at": user.get("created_at"),
@@ -321,8 +357,11 @@ def auth_upsert_user(request_data: dict):
                     "id": uid,
                     "name": u["name"],
                     "field_of_work": u.get("field_of_work"),
+                    "department": u.get("department"),
+                    "institution": u.get("institution"),
                     "training_type": u.get("training_type") or "siwes",
                     "log_length_lines": u.get("log_length_lines") or "2-3",
+                    "is_onboarded": u.get("is_onboarded", False),
                     "custom_prompt": u.get("custom_prompt"),
                     "has_own_key": bool(u.get("api_key_encrypted")),
                     "created_at": u.get("created_at"),
@@ -340,8 +379,11 @@ def auth_upsert_user(request_data: dict):
                 "id": guest_uuid,
                 "name": u["name"],
                 "field_of_work": u.get("field_of_work"),
+                "department": u.get("department"),
+                "institution": u.get("institution"),
                 "training_type": u.get("training_type") or "siwes",
                 "log_length_lines": u.get("log_length_lines") or "2-3",
+                "is_onboarded": u.get("is_onboarded", False),
                 "custom_prompt": u.get("custom_prompt"),
                 "has_own_key": bool(u.get("api_key_encrypted")),
                 "created_at": u.get("created_at"),
@@ -354,16 +396,23 @@ def auth_upsert_user(request_data: dict):
             "email": email,
             "name": name,
             "avatar_url": avatar_url,
+            "field_of_work": None,
+            "department": None,
+            "institution": None,
             "training_type": "siwes",
             "log_length_lines": "2-3",
+            "is_onboarded": False,
             "created_at": None,
         }
         return {
             "id": new_id,
             "name": name,
             "field_of_work": None,
+            "department": None,
+            "institution": None,
             "training_type": "siwes",
             "log_length_lines": "2-3",
+            "is_onboarded": False,
             "custom_prompt": None,
             "has_own_key": False,
             "created_at": None,
@@ -384,8 +433,11 @@ def auth_upsert_user(request_data: dict):
                 "id": user_id,
                 "name": user["name"],
                 "field_of_work": user.get("field_of_work"),
+                "department": user.get("department"),
+                "institution": user.get("institution"),
                 "training_type": user.get("training_type") or "siwes",
                 "log_length_lines": user.get("log_length_lines") or "2-3",
+                "is_onboarded": user.get("is_onboarded", False),
                 "custom_prompt": user.get("custom_prompt"),
                 "has_own_key": bool(user.get("api_key_encrypted")),
                 "created_at": user.get("created_at"),
@@ -408,8 +460,11 @@ def auth_upsert_user(request_data: dict):
                         "id": str(user["id"]),
                         "name": user["name"],
                         "field_of_work": user.get("field_of_work"),
+                        "department": user.get("department"),
+                        "institution": user.get("institution"),
                         "training_type": user.get("training_type") or "siwes",
                         "log_length_lines": user.get("log_length_lines") or "2-3",
+                        "is_onboarded": user.get("is_onboarded", False),
                         "custom_prompt": user.get("custom_prompt"),
                         "has_own_key": bool(user.get("api_key_encrypted")),
                         "created_at": user.get("created_at"),
@@ -423,6 +478,7 @@ def auth_upsert_user(request_data: dict):
             "avatar_url": avatar_url,
             "training_type": "siwes",
             "log_length_lines": "2-3",
+            "is_onboarded": False,
         }).execute()
 
         user = new_user.data[0]
@@ -430,8 +486,11 @@ def auth_upsert_user(request_data: dict):
             "id": str(user["id"]),
             "name": user["name"],
             "field_of_work": user.get("field_of_work"),
+            "department": user.get("department"),
+            "institution": user.get("institution"),
             "training_type": user.get("training_type") or "siwes",
             "log_length_lines": user.get("log_length_lines") or "2-3",
+            "is_onboarded": user.get("is_onboarded", False),
             "custom_prompt": user.get("custom_prompt"),
             "has_own_key": False,
             "created_at": user.get("created_at"),
@@ -460,8 +519,11 @@ def get_user_by_auth_id(auth_user_id: str):
             "id": str(user["id"]),
             "name": user["name"],
             "field_of_work": user.get("field_of_work"),
+            "department": user.get("department"),
+            "institution": user.get("institution"),
             "training_type": user.get("training_type") or "siwes",
             "log_length_lines": user.get("log_length_lines") or "2-3",
+            "is_onboarded": user.get("is_onboarded", False),
             "custom_prompt": user.get("custom_prompt"),
             "has_own_key": bool(user.get("api_key_encrypted")),
             "created_at": user.get("created_at"),

@@ -425,26 +425,26 @@ function LandingContent() {
         <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
           
           {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] text-ink-700 text-caption font-medium mb-6">
-            <span className="w-2 h-2 rounded-full bg-accent-600" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] text-ink-700 text-caption font-medium mb-6 animate-fade-in-up">
+            <span className="w-2 h-2 rounded-full bg-accent-600 animate-pulse" />
             <span>Built for Nigerian Students</span>
             <span className="text-ink-300">•</span>
             <span className="text-accent-700 font-semibold">SWEP • SIWES • IT</span>
           </div>
 
           {/* Main Headline with Proper Line Height */}
-          <h1 className="max-w-[840px] text-[32px] sm:text-[44px] md:text-[52px] text-ink-900 font-bold tracking-tight leading-[1.24] sm:leading-[1.18] md:leading-[1.15]">
+          <h1 className="max-w-[840px] text-[32px] sm:text-[44px] md:text-[52px] text-ink-900 font-bold tracking-tight leading-[1.24] sm:leading-[1.18] md:leading-[1.15] animate-fade-in-up delay-75">
             Speak your day. <br className="hidden xs:inline" />
             Fit your logbook's exact lines.
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-5 max-w-[620px] font-body text-[16px] sm:text-[18px] text-ink-600 leading-relaxed">
+          <p className="mt-5 max-w-[620px] font-body text-[16px] sm:text-[18px] text-ink-600 leading-relaxed animate-fade-in-up delay-150">
             Record what you did in your department or on industrial attachment in plain speech or Nigerian lingo. Yarn formats everything into crisp, first-person entries with "I" and "We", strictly matching your paper logbook's box limits.
           </p>
 
           {/* Hero CTAs */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 w-full max-w-[440px]">
+          <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 w-full max-w-[440px] animate-fade-in-up delay-200">
             {authenticatedUser ? (
               <div className="flex flex-col gap-2.5 w-full">
                 <Link
@@ -529,7 +529,7 @@ function LandingContent() {
           {/* ========================================================
               HERO MOCKUP: INTERACTIVE LOGBOOK CARD
           ======================================================== */}
-          <div id="demo" className="mt-12 w-full max-w-[820px] rounded-3xl bg-surface border border-border p-4 sm:p-7 shadow-[0_12px_40px_rgba(16,24,40,0.06)] text-left flex flex-col gap-5">
+          <div id="demo" className="mt-12 w-full max-w-[820px] rounded-3xl bg-surface border border-border p-4 sm:p-7 shadow-[0_12px_40px_rgba(16,24,40,0.06)] text-left flex flex-col gap-5 card-interactive">
             
             {/* Card Header with Level Switcher */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-4">
@@ -554,7 +554,7 @@ function LandingContent() {
                   onClick={() => setActiveDemoTier("swep")}
                   className={`py-1.5 px-3 rounded-lg font-medium text-center transition-all cursor-pointer ${
                     activeDemoTier === "swep"
-                      ? "bg-surface text-ink-900 shadow-sm font-semibold"
+                      ? "bg-surface text-ink-900 shadow-sm font-semibold scale-[1.02]"
                       : "text-ink-600 hover:text-ink-900"
                   }`}
                 >
@@ -565,7 +565,7 @@ function LandingContent() {
                   onClick={() => setActiveDemoTier("siwes")}
                   className={`py-1.5 px-3 rounded-lg font-medium text-center transition-all cursor-pointer ${
                     activeDemoTier === "siwes"
-                      ? "bg-surface text-ink-900 shadow-sm font-semibold"
+                      ? "bg-surface text-ink-900 shadow-sm font-semibold scale-[1.02]"
                       : "text-ink-600 hover:text-ink-900"
                   }`}
                 >
@@ -576,7 +576,7 @@ function LandingContent() {
                   onClick={() => setActiveDemoTier("it")}
                   className={`py-1.5 px-3 rounded-lg font-medium text-center transition-all cursor-pointer ${
                     activeDemoTier === "it"
-                      ? "bg-surface text-ink-900 shadow-sm font-semibold"
+                      ? "bg-surface text-ink-900 shadow-sm font-semibold scale-[1.02]"
                       : "text-ink-600 hover:text-ink-900"
                   }`}
                 >
@@ -585,8 +585,8 @@ function LandingContent() {
               </div>
             </div>
 
-            {/* Split View: Voice Recording vs Paper Log Entry */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+            {/* Split View: Voice Recording vs Paper Log Entry with smooth fade on switch */}
+            <div key={activeDemoTier} className="grid grid-cols-1 md:grid-cols-12 gap-4 animate-fade-in">
               
               {/* Left Column: Spoken Yarn & Waveform (5 cols) */}
               <div className="md:col-span-5 rounded-2xl bg-surface-muted/60 border border-border p-4 flex flex-col justify-between gap-3">
@@ -605,13 +605,13 @@ function LandingContent() {
                   </p>
                 </div>
 
-                {/* Simulated Audio Waveform Bar */}
+                {/* Simulated Audio Waveform Bar with subtle GPU breath */}
                 <div className="pt-2 flex items-center gap-1.5 h-6">
                   {[40, 75, 50, 90, 60, 85, 30, 95, 70, 45, 80, 65, 90, 50, 35, 75, 60, 40].map((h, i) => (
                     <span
                       key={i}
-                      className="flex-1 bg-accent-600/40 rounded-full transition-all duration-300"
-                      style={{ height: `${h}%` }}
+                      className="flex-1 bg-accent-600/40 rounded-full transition-all duration-300 animate-wave-bar"
+                      style={{ height: `${h}%`, animationDelay: `${(i % 6) * 140}ms` }}
                     />
                   ))}
                 </div>
@@ -683,8 +683,8 @@ function LandingContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Card 1: Physical Line Constraint */}
-            <div className="p-6 rounded-2xl bg-surface border border-border hover:border-accent-600/30 transition-all flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)] group">
+              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center transition-transform group-hover:scale-110 duration-200">
                 <AlignLeft size={20} />
               </div>
               <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
@@ -696,8 +696,8 @@ function LandingContent() {
             </div>
 
             {/* Card 2: Authentic First-Person Voice */}
-            <div className="p-6 rounded-2xl bg-surface border border-border hover:border-accent-600/30 transition-all flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)] group">
+              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center transition-transform group-hover:scale-110 duration-200">
                 <User size={20} />
               </div>
               <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
@@ -709,8 +709,8 @@ function LandingContent() {
             </div>
 
             {/* Card 3: Nigerian Workshop Lingo */}
-            <div className="p-6 rounded-2xl bg-surface border border-border hover:border-accent-600/30 transition-all flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)] group">
+              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center transition-transform group-hover:scale-110 duration-200">
                 <Building2 size={20} />
               </div>
               <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
@@ -722,8 +722,8 @@ function LandingContent() {
             </div>
 
             {/* Card 4: Weekly Timeline & Streaks */}
-            <div className="p-6 rounded-2xl bg-surface border border-border hover:border-accent-600/30 transition-all flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)] group">
+              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center transition-transform group-hover:scale-110 duration-200">
                 <Clock size={20} />
               </div>
               <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
@@ -735,8 +735,8 @@ function LandingContent() {
             </div>
 
             {/* Card 5: Offline PWA Readiness */}
-            <div className="p-6 rounded-2xl bg-surface border border-border hover:border-accent-600/30 transition-all flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)] group">
+              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center transition-transform group-hover:scale-110 duration-200">
                 <WifiOff size={20} />
               </div>
               <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
@@ -748,8 +748,8 @@ function LandingContent() {
             </div>
 
             {/* Card 6: One-Click Word & PDF Export */}
-            <div className="p-6 rounded-2xl bg-surface border border-border hover:border-accent-600/30 transition-all flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)]">
-              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col gap-3 shadow-[0_1px_3px_rgba(16,24,40,0.03)] group">
+              <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center transition-transform group-hover:scale-110 duration-200">
                 <FileText size={20} />
               </div>
               <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
@@ -838,7 +838,7 @@ function LandingContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* SWEP */}
-            <div className="p-6 rounded-2xl bg-surface border border-border flex flex-col justify-between gap-6 shadow-sm">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col justify-between gap-6 shadow-sm">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
@@ -860,8 +860,8 @@ function LandingContent() {
               </div>
             </div>
 
-            {/* SIWES (Removed 'Most Popular' tag) */}
-            <div className="p-6 rounded-2xl bg-surface border border-border flex flex-col justify-between gap-6 shadow-sm">
+            {/* SIWES */}
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col justify-between gap-6 shadow-sm">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
@@ -884,7 +884,7 @@ function LandingContent() {
             </div>
 
             {/* IT */}
-            <div className="p-6 rounded-2xl bg-surface border border-border flex flex-col justify-between gap-6 shadow-sm">
+            <div className="p-6 rounded-2xl bg-surface border border-border card-interactive flex flex-col justify-between gap-6 shadow-sm">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
@@ -937,15 +937,15 @@ function LandingContent() {
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
-                    className="w-full p-5 text-left flex items-center justify-between gap-4 font-subheading text-[15.5px] font-semibold text-ink-900 cursor-pointer"
+                    className="w-full p-5 text-left flex items-center justify-between gap-4 font-subheading text-[15.5px] font-semibold text-ink-900 cursor-pointer select-none"
                   >
                     <span>{faq.q}</span>
-                    <span className="text-ink-500 shrink-0">
-                      {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    <span className={`text-ink-500 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}>
+                      <ChevronDown size={18} />
                     </span>
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-5 font-small text-ink-600 leading-relaxed border-t border-border/40 pt-3">
+                    <div className="px-5 pb-5 font-small text-ink-600 leading-relaxed border-t border-border/40 pt-3 animate-fade-in-up">
                       {faq.a}
                     </div>
                   )}
@@ -1044,8 +1044,8 @@ function LandingContent() {
           GUEST SIGN-IN MODAL
       ======================================================== */}
       {isGuestModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
-          <div className="w-full max-w-[440px] rounded-2xl bg-surface border border-border p-6 shadow-xl flex flex-col gap-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-[440px] rounded-2xl bg-surface border border-border p-6 shadow-xl flex flex-col gap-4 animate-scale-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Logo size={28} />

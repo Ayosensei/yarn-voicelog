@@ -24,7 +24,7 @@ export default function LogCard({ log, userUuid }) {
     : (processed_output || raw_transcript || "").replace(/[#*`_]/g, "").slice(0, 140);
 
   return (
-    <article className="w-full bg-surface rounded-xl p-space-lg shadow-sm border border-border flex flex-col gap-space-sm hover:shadow-md transition-shadow active:scale-[0.99] cursor-pointer">
+    <article className="w-full bg-surface rounded-xl p-space-lg shadow-sm border border-border flex flex-col gap-space-sm card-interactive cursor-pointer">
       <Link href={`/u/${userUuid}/log/${id}`} className="flex flex-col h-full focus:outline-none">
         
         <div className="flex items-center justify-between">

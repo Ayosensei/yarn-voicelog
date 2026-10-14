@@ -82,7 +82,7 @@ const DEMO_PREVIEWS = {
     title: "IT • Part 4 (400L)",
     lines: "3 lines",
     targetLines: "2-4 lines target",
-    badge: "Professional Engineering",
+    badge: "Professional Training",
     voice:
       "“Inspected cooling tower condenser circuit, detected thermal drop across heat exchanger, isolated valve line for preventive flushing.”",
     output:
@@ -218,7 +218,7 @@ function LandingContent() {
     try {
       const user = await createUser({
         name: guestName.trim(),
-        field_of_work: guestField.trim() || "General Engineering",
+        field_of_work: guestField.trim() || "General Attachment",
         is_onboarded: false,
       });
 
@@ -427,7 +427,7 @@ function LandingContent() {
           {/* Top Pill Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] text-ink-700 text-caption font-medium mb-6">
             <span className="w-2 h-2 rounded-full bg-accent-600" />
-            <span>Built for Nigerian Engineering & Science Students</span>
+            <span>Built for Nigerian Students</span>
             <span className="text-ink-300">•</span>
             <span className="text-accent-700 font-semibold">SWEP • SIWES • IT</span>
           </div>
@@ -1087,7 +1087,7 @@ function LandingContent() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Mechanical Engineering"
+                  placeholder="e.g. Computer Science, Accounting, EDM, Agric..."
                   value={guestField}
                   onChange={(e) => setGuestField(e.target.value)}
                   className="w-full h-11 px-3.5 rounded-xl border border-border-strong bg-surface text-ink-900 text-small outline-none focus:ring-2 focus:ring-accent-600 transition-all"

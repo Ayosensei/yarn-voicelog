@@ -15,6 +15,13 @@ export async function middleware(request) {
     return supabaseResponse;
   }
 
+  const { pathname } = request.nextUrl;
+
+  // Do not run getUser on auth callback route; allow pristine cookies to reach the route handler
+  if (pathname.startsWith("/auth/callback")) {
+    return supabaseResponse;
+  }
+
   try {
     const supabase = createServerClient(
       supabaseUrl,

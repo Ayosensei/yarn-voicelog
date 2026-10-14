@@ -18,9 +18,9 @@ PROGRAM_PROFILES = {
         "default_lines": "5-6 lines",
         "word_budget": "60-90 words",
         "guidance": (
-            "Foundational workshop and laboratory training. Focus on practical bench work, "
-            "introductory tool handling (lathe, welding, files, meters), workshop safety precautions, "
-            "and materials used. Explain the step-by-step practical task completed in the workshop."
+            "Foundational workshop and laboratory training across engineering, science, and technology departments. "
+            "Focus on hands-on practical tasks, departmental equipment and instruments (lathe, testing meters, field tools, lab apparatus), "
+            "safety precautions, and materials used. Explain the step-by-step practical task completed."
         ),
     },
     "siwes": {

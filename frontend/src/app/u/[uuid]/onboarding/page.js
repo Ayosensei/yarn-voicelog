@@ -35,8 +35,8 @@ const PROGRAM_OPTIONS = [
     level: "Part 2 (200L)",
     duration: "8–12 weeks",
     defaultLines: "5-6",
-    badge: "Practical & Workshop",
-    desc: "Foundational workshop practicals (lathe work, bench fitting, safety rules, welding).",
+    badge: "Departmental Practicals",
+    desc: "Departmental practicals, laboratory instrumentation, field exercises, and technical tools tailored to your discipline.",
     preview: {
       informal:
         "• I reported to the mechanical workshop and we collected our mild steel rods from the store.\n• I set up the workpiece on the bench vise and we filed the edges smooth.\n• We used a vernier caliper to check the thickness before calling the technician.",

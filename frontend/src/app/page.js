@@ -62,11 +62,11 @@ const DEMO_PREVIEWS = {
     title: "SWEP • Part 2 (200L)",
     lines: "5 lines",
     targetLines: "5-6 lines target",
-    badge: "Foundational Workshop",
+    badge: "Departmental Practicals",
     voice:
-      "“We were in the fitting workshop today. The instructor taught us safety gear protocols, then we used the hacksaw and bench vise to cut mild steel rods to 150mm.”",
+      "“We reported for our SWEP practicals today. The instructor briefed us on safety and procedures, then we set up our equipment, took dimension readings with the vernier caliper, and recorded everything in our sheets.”",
     output:
-      "• Attended mandatory workshop safety induction covering PPE protocols and hazard prevention.\n• Marked out 150mm dimensions on mild steel round stock using vernier height gauge and scriber.\n• Mounted workpiece in bench vise and carried out manual sawing with a 24-TPI hacksaw blade.\n• Checked cut dimensions against tolerance specifications under technician supervision.\n• Deburred workpiece edges using a second-cut flat file and cleaned workshop bench.",
+      "• Attended mandatory departmental practical safety briefing and verified personal protective equipment.\n• Set up workpieces and testing apparatus according to laboratory operating guidelines.\n• Measured specimen dimensions and documented initial tolerance readings using a vernier caliper.\n• Executed hands-on practical exercises under the supervision of the senior technologist.\n• Documented experimental observations and cleaned up workspace station upon completion.",
   },
   siwes: {
     title: "SIWES • Part 3 (300L)",
@@ -90,31 +90,18 @@ const DEMO_PREVIEWS = {
   },
 };
 
-const NIGERIAN_UNIVERSITIES = [
-  "OAU Ife",
-  "UNILAG",
-  "FUTA Akure",
-  "UI Ibadan",
-  "UNIBEN",
-  "ABU Zaria",
-  "Covenant",
-  "LASU",
-  "FUTO Owerri",
-  "UNN Nsukka",
-];
-
 const FAQS = [
   {
     q: "Does Yarn work for my university's physical logbook?",
-    a: "Yes. Whether you attend OAU, UNILAG, FUTA, UI, UNIBEN, ABU, or any other institution, university logbooks adhere to the same ITF (Industrial Training Fund) line and weekly box structures. You can pick SWEP (5-6 lines), SIWES (2-3 lines), or IT (2-4 lines), or set a custom line limit in your settings.",
+    a: "Yes. Whether you attend OAU or other Nigerian institutions, university logbooks adhere to the standard ITF (Industrial Training Fund) line and weekly box structures. You can pick SWEP (5-6 lines), SIWES (2-3 lines), or IT (2-4 lines), or set a custom line limit in your settings.",
   },
   {
     q: "Will my industry supervisor or academic coordinator notice it was generated?",
-    a: "No. Generic AI tools produce lengthy academic essays that spill out of logbook margins. Yarn strictly takes your actual spoken daily duties and formats them into concise, bulleted sentences using personal first-person pronouns ('I' and 'We') with realistic engineering workshop terminology.",
+    a: "No. Generic AI tools produce lengthy academic essays that spill out of logbook margins. Yarn strictly takes your actual spoken daily duties and formats them into concise, bulleted sentences using personal first-person pronouns ('I' and 'We') with realistic engineering terminology.",
   },
   {
     q: "Can I speak in Nigerian English, Pidgin, or workshop slang?",
-    a: "Yes! Yarn is specifically trained to recognize Nigerian workshop jargon. Whether you say 'we used hacksaw cut mild steel', 'calibrated the megger', or 'followed technician to pump house', Yarn accurately translates your words into polished, technical student voice.",
+    a: "Yes! Yarn understands exactly how you speak everyday. Even if you say 'I follow my Oga go site today, we do motor alignment and check leakage' or 'the machine dey misbehave so we lose am, wash the filter, and couple am back', Yarn accurately captures what happened. It transforms your raw spoken gist into clean, professional first-person logbook sentences with 'I' and 'We' that your supervisor will approve.",
   },
   {
     q: "What if I have poor or no internet at my work site or workshop?",
@@ -304,7 +291,7 @@ function LandingContent() {
                         : `/u/${yarnUser.id}`
                       : "/auth/callback"
                   }
-                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-white text-small font-medium inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-white text-small font-semibold inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                 >
                   <span className="hidden xs:inline">
                     {yarnUser?.is_onboarded === false ? "Complete Setup" : "Go to Logbook"}
@@ -323,17 +310,17 @@ function LandingContent() {
                 </button>
               </div>
             ) : (
-              /* Non-authenticated State */
+              /* Non-authenticated State: Dark Mode High-Contrast White Pill with Bold Black Text */
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={isLoadingAuth}
-                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full bg-ink-900 text-white dark:bg-white dark:text-ink-900 hover:opacity-90 active:scale-[0.98] text-small font-medium inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  className="h-9 sm:h-10 px-3.5 sm:px-4 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:opacity-90 active:scale-[0.98] text-small font-semibold inline-flex items-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                 >
                   <GoogleIcon className="w-3.5 h-3.5" />
-                  <span className="hidden xs:inline">Sign in with Google</span>
-                  <span className="xs:hidden">Sign In</span>
+                  <span className="hidden xs:inline text-white dark:text-neutral-950 font-semibold">Sign in with Google</span>
+                  <span className="xs:hidden text-white dark:text-neutral-950 font-semibold">Sign In</span>
                 </button>
               </div>
             )}
@@ -445,15 +432,15 @@ function LandingContent() {
             <span className="text-accent-700 font-semibold">SWEP • SIWES • IT</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="max-w-[840px] font-hero text-[34px] sm:text-[46px] md:text-[54px] text-ink-900 font-bold tracking-tight leading-[1.12]">
+          {/* Main Headline with Proper Line Height */}
+          <h1 className="max-w-[840px] text-[32px] sm:text-[44px] md:text-[52px] text-ink-900 font-bold tracking-tight leading-[1.24] sm:leading-[1.18] md:leading-[1.15]">
             Speak your day. <br className="hidden xs:inline" />
             Fit your logbook's exact lines.
           </h1>
 
           {/* Subtitle */}
           <p className="mt-5 max-w-[620px] font-body text-[16px] sm:text-[18px] text-ink-600 leading-relaxed">
-            Record what you did in the workshop or on industrial attachment in plain speech or workshop lingo. Yarn formats everything into crisp, first-person entries with "I" and "We", strictly matching your paper logbook's box limits.
+            Record what you did in your department or on industrial attachment in plain speech or Nigerian lingo. Yarn formats everything into crisp, first-person entries with "I" and "We", strictly matching your paper logbook's box limits.
           </p>
 
           {/* Hero CTAs */}
@@ -468,7 +455,7 @@ function LandingContent() {
                         : `/u/${yarnUser.id}`
                       : "/auth/callback"
                   }
-                  className="w-full h-12 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-white font-medium text-[15px] flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                  className="w-full h-12 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <span>
                     {yarnUser?.is_onboarded === false
@@ -494,20 +481,20 @@ function LandingContent() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={isLoadingAuth}
-                  className="w-full sm:flex-1 h-12 rounded-full bg-ink-900 text-white dark:bg-white dark:text-ink-900 hover:opacity-90 active:scale-[0.98] font-medium text-[15px] flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full sm:flex-1 h-12 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:opacity-90 active:scale-[0.98] font-semibold text-[15px] flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isLoadingAuth ? (
                     <RefreshCw size={17} className="animate-spin text-accent-600" />
                   ) : (
                     <GoogleIcon className="w-4 h-4 shrink-0" />
                   )}
-                  <span>Continue with Google</span>
+                  <span className="text-white dark:text-neutral-950">Continue with Google</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsGuestModalOpen(true)}
-                  className="w-full sm:w-auto h-12 px-6 rounded-full bg-surface border border-border hover:bg-surface-muted text-ink-800 font-medium text-[15px] flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto h-12 px-6 rounded-full bg-surface border border-border hover:bg-surface-muted text-ink-800 font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>Guest Mode</span>
                 </button>
@@ -527,12 +514,8 @@ function LandingContent() {
             </button>
           )}
 
-          {/* Micro-Trust Indicators */}
+          {/* Trust Indicators (Removed 'No credit card') */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-caption text-ink-500">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 size={14} className="text-success" />
-              <span>No credit card required</span>
-            </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 size={14} className="text-success" />
               <span>Offline-ready PWA</span>
@@ -664,22 +647,17 @@ function LandingContent() {
       </section>
 
       {/* ========================================================
-          CAMPUS TRUST STRIP
+          CAMPUS STRIP (OAU ONLY)
       ======================================================== */}
-      <section className="py-8 bg-surface-muted/40 border-b border-border">
-        <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-caption font-medium uppercase tracking-wider text-ink-500 shrink-0">
-            Adopted by students across Nigerian campuses
+      <section className="py-6 bg-surface-muted/40 border-b border-border">
+        <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <span className="text-caption font-medium uppercase tracking-wider text-ink-500">
+            Tailored for Obafemi Awolowo University Logbook Requirements
           </span>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-            {NIGERIAN_UNIVERSITIES.map((uni) => (
-              <span
-                key={uni}
-                className="text-caption font-medium px-2.5 py-1 rounded-lg bg-surface border border-border text-ink-700 shadow-sm"
-              >
-                {uni}
-              </span>
-            ))}
+          <div className="inline-flex items-center gap-2">
+            <span className="text-caption font-semibold px-3.5 py-1.5 rounded-lg bg-surface border border-border text-ink-800 shadow-sm">
+              🏛️ Obafemi Awolowo University (OAU)
+            </span>
           </div>
         </div>
       </section>
@@ -690,14 +668,14 @@ function LandingContent() {
       <section id="features" className="py-16 sm:py-24 border-b border-border">
         <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-col gap-12">
           
-          <div className="flex flex-col items-center text-center max-w-[620px] mx-auto">
+          <div className="flex flex-col items-center text-center max-w-[640px] mx-auto">
             <span className="text-caption uppercase font-semibold tracking-wider text-accent-700 px-3 py-1 rounded-full bg-accent-50 border border-accent-200">
               Engineered for Nigerian Logbooks
             </span>
-            <h2 className="mt-3 font-title text-[28px] sm:text-[34px] font-bold text-ink-900 tracking-tight">
+            <h2 className="mt-3 text-[26px] sm:text-[32px] md:text-[36px] font-bold text-ink-900 tracking-tight leading-[1.3] sm:leading-[1.25]">
               Why students never write logbooks manually again
             </h2>
-            <p className="mt-2 text-ink-600 font-body text-body">
+            <p className="mt-2 text-ink-600 font-body text-body leading-relaxed">
               Standard AI chatbots produce generic essays that get rejected by university coordinators. Yarn is purpose-built for physical logbook constraints.
             </p>
           </div>
@@ -709,7 +687,7 @@ function LandingContent() {
               <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
                 <AlignLeft size={20} />
               </div>
-              <h3 className="font-subheading text-[17px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
                 Exact Physical Line Fit
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
@@ -722,11 +700,11 @@ function LandingContent() {
               <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
                 <User size={20} />
               </div>
-              <h3 className="font-subheading text-[17px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
                 Active "I" & "We" Sentences
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
-                No awkward robotic passive voice. Generates authentic sentences like "I inspected the pump..." and "We completed the lathe facing operation under supervision."
+                No awkward robotic passive voice. Generates authentic sentences like "I inspected the pump..." and "We completed the testing protocol under supervision."
               </p>
             </div>
 
@@ -735,11 +713,11 @@ function LandingContent() {
               <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
                 <Building2 size={20} />
               </div>
-              <h3 className="font-subheading text-[17px] font-semibold text-ink-900">
-                Workshop & Industry Jargon
+              <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
+                Understands Nigerian Lingo
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
-                Understands Nigerian workshop tools and site terms: vernier calipers, mild steel rods, packing seals, megger testing, and site safety inductions.
+                Speak naturally about your day: "I follow engineer go site", "the generator dey misbehave so we lose am". Yarn transforms it into polished student technical voice.
               </p>
             </div>
 
@@ -748,7 +726,7 @@ function LandingContent() {
               <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
                 <Clock size={20} />
               </div>
-              <h3 className="font-subheading text-[17px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
                 Weekly Timeline & Streaks
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
@@ -761,11 +739,11 @@ function LandingContent() {
               <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
                 <WifiOff size={20} />
               </div>
-              <h3 className="font-subheading text-[17px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
                 Works on Poor or Zero Network
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
-                Workshop basements and remote construction sites often have spotty cellular service. Yarn caches your recordings offline and syncs when back in range.
+                Workshops and remote site locations often have spotty cellular service. Yarn caches your recordings offline and syncs when back in network range.
               </p>
             </div>
 
@@ -774,7 +752,7 @@ function LandingContent() {
               <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-700 flex items-center justify-center">
                 <FileText size={20} />
               </div>
-              <h3 className="font-subheading text-[17px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[17px] font-semibold text-ink-900 leading-snug">
                 Official Word & PDF Export
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
@@ -793,11 +771,11 @@ function LandingContent() {
       <section className="py-16 sm:py-24 bg-surface-muted/30 border-b border-border">
         <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-col gap-12">
           
-          <div className="flex flex-col items-center text-center max-w-[620px] mx-auto">
+          <div className="flex flex-col items-center text-center max-w-[640px] mx-auto">
             <span className="text-caption uppercase font-semibold tracking-wider text-accent-700 px-3 py-1 rounded-full bg-accent-50 border border-accent-200">
               Simple 3-Step Routine
             </span>
-            <h2 className="mt-3 font-title text-[28px] sm:text-[34px] font-bold text-ink-900 tracking-tight">
+            <h2 className="mt-3 text-[26px] sm:text-[32px] md:text-[36px] font-bold text-ink-900 tracking-tight leading-[1.3] sm:leading-[1.25]">
               From spoken words to signed logbook in 30 seconds
             </h2>
           </div>
@@ -807,18 +785,18 @@ function LandingContent() {
             {/* Step 01 */}
             <div className="p-7 rounded-2xl bg-surface border border-border flex flex-col gap-4 relative shadow-sm">
               <span className="font-mono text-3xl font-bold text-accent-600/30">01</span>
-              <h3 className="font-subheading text-[18px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[18px] font-semibold text-ink-900 leading-snug">
                 Speak on your ride home
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
-                Tap record as you finish work or board the bus. Mention the machine you turned on, the fittings you sawed, or the report you filed.
+                Tap record as you finish work or board the bus. Mention the apparatus you tested, the diagnostic you ran, or the site survey you assisted with.
               </p>
             </div>
 
             {/* Step 02 */}
             <div className="p-7 rounded-2xl bg-surface border border-border flex flex-col gap-4 relative shadow-sm">
               <span className="font-mono text-3xl font-bold text-accent-600/30">02</span>
-              <h3 className="font-subheading text-[18px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[18px] font-semibold text-ink-900 leading-snug">
                 Yarn formats your entry
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
@@ -829,7 +807,7 @@ function LandingContent() {
             {/* Step 03 */}
             <div className="p-7 rounded-2xl bg-surface border border-border flex flex-col gap-4 relative shadow-sm">
               <span className="font-mono text-3xl font-bold text-accent-600/30">03</span>
-              <h3 className="font-subheading text-[18px] font-semibold text-ink-900">
+              <h3 className="font-subheading text-[18px] font-semibold text-ink-900 leading-snug">
                 Copy and pen down
               </h3>
               <p className="font-small text-ink-600 leading-relaxed">
@@ -848,12 +826,12 @@ function LandingContent() {
       <section id="programs" className="py-16 sm:py-24 border-b border-border">
         <div className="max-w-[1140px] mx-auto px-4 sm:px-6 flex flex-col gap-12">
           
-          <div className="flex flex-col items-center text-center max-w-[620px] mx-auto">
+          <div className="flex flex-col items-center text-center max-w-[640px] mx-auto">
             <span className="text-caption uppercase font-semibold tracking-wider text-accent-700 px-3 py-1 rounded-full bg-accent-50 border border-accent-200">
-              All Nigerian Attachment Programs
+              Attachment Programs
             </span>
-            <h2 className="mt-3 font-title text-[28px] sm:text-[34px] font-bold text-ink-900 tracking-tight">
-              Tailored for each year of your engineering degree
+            <h2 className="mt-3 text-[26px] sm:text-[32px] md:text-[36px] font-bold text-ink-900 tracking-tight leading-[1.3] sm:leading-[1.25]">
+              Tailored for each year of your academic training
             </h2>
           </div>
 
@@ -868,11 +846,11 @@ function LandingContent() {
                   </span>
                   <span className="text-caption text-ink-500 font-medium">8–12 weeks</span>
                 </div>
-                <h3 className="font-subheading text-[20px] font-bold text-ink-900">
+                <h3 className="font-subheading text-[20px] font-bold text-ink-900 leading-snug">
                   SWEP
                 </h3>
                 <p className="font-small text-ink-600 leading-relaxed">
-                  Students Workshop Experience Programme. Focuses on foundational mechanical fitting, electrical wiring, welding, carpentry, and safety gear rules.
+                  Student Work Experience Programme. Departmental hands-on practicals, laboratory instrumentation, technical diagnostics, field exercises, and safety protocols tailored to your discipline.
                 </p>
               </div>
 
@@ -882,11 +860,8 @@ function LandingContent() {
               </div>
             </div>
 
-            {/* SIWES */}
-            <div className="p-6 rounded-2xl bg-surface border-2 border-accent-600/40 flex flex-col justify-between gap-6 shadow-md relative">
-              <div className="absolute -top-3 right-5 bg-accent-600 text-white text-[11px] font-semibold px-3 py-0.5 rounded-full uppercase tracking-wider">
-                Most Popular
-              </div>
+            {/* SIWES (Removed 'Most Popular' tag) */}
+            <div className="p-6 rounded-2xl bg-surface border border-border flex flex-col justify-between gap-6 shadow-sm">
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-accent-50 text-accent-700">
@@ -894,7 +869,7 @@ function LandingContent() {
                   </span>
                   <span className="text-caption text-ink-500 font-medium">3 months</span>
                 </div>
-                <h3 className="font-subheading text-[20px] font-bold text-ink-900">
+                <h3 className="font-subheading text-[20px] font-bold text-ink-900 leading-snug">
                   SIWES
                 </h3>
                 <p className="font-small text-ink-600 leading-relaxed">
@@ -917,11 +892,11 @@ function LandingContent() {
                   </span>
                   <span className="text-caption text-ink-500 font-medium">6 months</span>
                 </div>
-                <h3 className="font-subheading text-[20px] font-bold text-ink-900">
+                <h3 className="font-subheading text-[20px] font-bold text-ink-900 leading-snug">
                   IT
                 </h3>
                 <p className="font-small text-ink-600 leading-relaxed">
-                  Industrial Training. Advanced technical engineering workflows, plant diagnostics, instrumentation, and professional project execution.
+                  Industrial Training. Advanced technical workflows, plant diagnostics, instrumentation, and professional project execution.
                 </p>
               </div>
 
@@ -946,7 +921,7 @@ function LandingContent() {
             <span className="text-caption uppercase font-semibold tracking-wider text-accent-700 px-3 py-1 rounded-full bg-accent-50 border border-accent-200">
               Got Questions?
             </span>
-            <h2 className="mt-3 font-title text-[28px] sm:text-[34px] font-bold text-ink-900 tracking-tight">
+            <h2 className="mt-3 text-[26px] sm:text-[32px] md:text-[36px] font-bold text-ink-900 tracking-tight leading-[1.3] sm:leading-[1.25]">
               Frequently asked questions
             </h2>
           </div>
@@ -983,18 +958,18 @@ function LandingContent() {
       </section>
 
       {/* ========================================================
-          BOTTOM CALL TO ACTION (ClassFundz Dark / High Contrast Pill)
+          BOTTOM CALL TO ACTION (Fixed Line Height & Contrast)
       ======================================================== */}
       <section className="py-16 sm:py-20 bg-surface">
         <div className="max-w-[920px] mx-auto px-4 sm:px-6 text-center flex flex-col items-center gap-6">
           <Logo size={42} />
           
-          <h2 className="font-title text-[28px] sm:text-[38px] font-bold text-ink-900 tracking-tight max-w-[640px]">
+          <h2 className="text-[26px] sm:text-[34px] md:text-[38px] font-bold text-ink-900 tracking-tight leading-[1.32] sm:leading-[1.24] max-w-[640px]">
             Ready to stop spending your evenings writing logbooks?
           </h2>
           
-          <p className="text-ink-600 font-body text-[16px] max-w-[520px]">
-            Join hundreds of Nigerian students recording in 30 seconds. Fit your paper booklet lines and impress your industrial supervisor.
+          <p className="text-ink-600 font-body text-[16px] max-w-[540px] leading-relaxed">
+            Record your daily tasks in 30 seconds. Fit your paper booklet lines and impress your supervisor on signing day.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-[420px]">
@@ -1007,7 +982,7 @@ function LandingContent() {
                       : `/u/${yarnUser.id}`
                     : "/auth/callback"
                 }
-                className="w-full h-12 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-white font-medium text-[15px] flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                className="w-full h-12 rounded-full bg-accent-600 hover:bg-accent-700 active:scale-[0.98] text-white font-semibold text-[15px] flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
               >
                 <span>Continue to Your Logbook</span>
                 <ArrowRight size={17} />
@@ -1018,16 +993,16 @@ function LandingContent() {
                   type="button"
                   onClick={handleGoogleSignIn}
                   disabled={isLoadingAuth}
-                  className="w-full sm:flex-1 h-12 rounded-full bg-ink-900 text-white dark:bg-white dark:text-ink-900 hover:opacity-90 active:scale-[0.98] font-medium text-[15px] flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full sm:flex-1 h-12 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:opacity-90 active:scale-[0.98] font-semibold text-[15px] flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                 >
                   <GoogleIcon className="w-4 h-4 shrink-0" />
-                  <span>Start with Google</span>
+                  <span className="text-white dark:text-neutral-950">Start with Google</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsGuestModalOpen(true)}
-                  className="w-full sm:w-auto h-12 px-6 rounded-full bg-surface border border-border hover:bg-surface-muted text-ink-800 font-medium text-[15px] flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full sm:w-auto h-12 px-6 rounded-full bg-surface border border-border hover:bg-surface-muted text-ink-800 font-semibold text-[15px] flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <span>Guest Mode</span>
                 </button>
@@ -1045,7 +1020,7 @@ function LandingContent() {
           <div className="flex items-center gap-3">
             <Logo size={24} showWordmark />
             <span className="text-ink-300">|</span>
-            <span>© {new Date().getFullYear()} Yarn. Built for Nigerian Students.</span>
+            <span>© {new Date().getFullYear()} Yarn. Built for OAU Students.</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -1123,12 +1098,12 @@ function LandingContent() {
                 <button
                   type="submit"
                   disabled={isSubmittingGuest}
-                  className="flex-1 h-11 rounded-full bg-ink-900 text-white dark:bg-white dark:text-ink-900 font-medium text-small flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex-1 h-11 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 font-semibold text-small flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingGuest ? (
                     <RefreshCw size={16} className="animate-spin text-accent-600" />
                   ) : (
-                    <span>Start Guest Logbook</span>
+                    <span className="text-white dark:text-neutral-950 font-semibold">Start Guest Logbook</span>
                   )}
                 </button>
                 <button

@@ -48,7 +48,7 @@ const PROGRAM_OPTIONS = [
     level: "Part 2 (200L)",
     duration: "8–12 weeks",
     defaultLines: "5-6",
-    desc: "Foundational workshop practicals (lathe, bench work, safety rules).",
+    desc: "Departmental practicals, laboratory instrumentation, field exercises, and technical tools tailored to your discipline.",
   },
   {
     id: "siwes",

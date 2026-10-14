@@ -122,7 +122,12 @@ def create_user(user: UserCreate):
     client = get_supabase_client()
     if client:
         try:
-            created = db_create_user(name=user.name, field_of_work=user.field_of_work)
+            created = db_create_user(
+                name=user.name,
+                field_of_work=user.field_of_work,
+                training_type=user.training_type or "siwes",
+                log_length_lines=user.log_length_lines or "2-3",
+            )
             uid = str(created["id"])
             # Mirror to in-memory store
             fake_users_db[uid] = created
@@ -130,6 +135,8 @@ def create_user(user: UserCreate):
                 "id": uid,
                 "name": created["name"],
                 "field_of_work": created.get("field_of_work"),
+                "training_type": created.get("training_type") or "siwes",
+                "log_length_lines": created.get("log_length_lines") or "2-3",
                 "custom_prompt": created.get("custom_prompt"),
                 "has_own_key": bool(created.get("api_key_encrypted")),
                 "created_at": created.get("created_at"),
@@ -143,6 +150,8 @@ def create_user(user: UserCreate):
         "id": user_id,
         "name": user.name,
         "field_of_work": user.field_of_work,
+        "training_type": user.training_type or "siwes",
+        "log_length_lines": user.log_length_lines or "2-3",
         "custom_prompt": None,
         "api_key_encrypted": None,
         "created_at": None,
@@ -152,6 +161,8 @@ def create_user(user: UserCreate):
         "id": new_user["id"],
         "name": new_user["name"],
         "field_of_work": new_user["field_of_work"],
+        "training_type": new_user["training_type"],
+        "log_length_lines": new_user["log_length_lines"],
         "custom_prompt": new_user["custom_prompt"],
         "has_own_key": False,
         "created_at": new_user["created_at"],
@@ -171,6 +182,8 @@ def get_user(user_uuid: str):
                     "id": str(user["id"]),
                     "name": user["name"],
                     "field_of_work": user.get("field_of_work"),
+                    "training_type": user.get("training_type") or "siwes",
+                    "log_length_lines": user.get("log_length_lines") or "2-3",
                     "custom_prompt": user.get("custom_prompt"),
                     "has_own_key": bool(user.get("api_key_encrypted")),
                     "created_at": user.get("created_at"),
@@ -186,6 +199,8 @@ def get_user(user_uuid: str):
         "id": user["id"],
         "name": user["name"],
         "field_of_work": user.get("field_of_work"),
+        "training_type": user.get("training_type") or "siwes",
+        "log_length_lines": user.get("log_length_lines") or "2-3",
         "custom_prompt": user.get("custom_prompt"),
         "has_own_key": bool(user.get("api_key_encrypted")),
         "created_at": user.get("created_at"),
@@ -195,7 +210,7 @@ def get_user(user_uuid: str):
 @app.patch("/api/users/{user_uuid}", response_model=UserResponse)
 def update_user(user_uuid: str, updates: UserUpdate):
     """
-    Update a student's profile, custom prompt, or personal Gemini API key.
+    Update a student's profile, custom prompt, training program, or personal Gemini API key.
     If an API key is provided, it is securely encrypted with Fernet.
     """
     client = get_supabase_client()
@@ -206,6 +221,10 @@ def update_user(user_uuid: str, updates: UserUpdate):
                 db_updates["name"] = updates.name
             if updates.field_of_work is not None:
                 db_updates["field_of_work"] = updates.field_of_work
+            if updates.training_type is not None:
+                db_updates["training_type"] = updates.training_type
+            if updates.log_length_lines is not None:
+                db_updates["log_length_lines"] = updates.log_length_lines
             if updates.custom_prompt is not None:
                 db_updates["custom_prompt"] = updates.custom_prompt
             if updates.api_key is not None:
@@ -219,6 +238,8 @@ def update_user(user_uuid: str, updates: UserUpdate):
                     "id": str(updated["id"]),
                     "name": updated["name"],
                     "field_of_work": updated.get("field_of_work"),
+                    "training_type": updated.get("training_type") or "siwes",
+                    "log_length_lines": updated.get("log_length_lines") or "2-3",
                     "custom_prompt": updated.get("custom_prompt"),
                     "has_own_key": bool(updated.get("api_key_encrypted")),
                     "created_at": updated.get("created_at"),
@@ -237,6 +258,10 @@ def update_user(user_uuid: str, updates: UserUpdate):
         user["custom_prompt"] = updates.custom_prompt
     if updates.field_of_work is not None:
         user["field_of_work"] = updates.field_of_work
+    if updates.training_type is not None:
+        user["training_type"] = updates.training_type
+    if updates.log_length_lines is not None:
+        user["log_length_lines"] = updates.log_length_lines
 
     if updates.api_key is not None:
         raw_key = updates.api_key.strip()
@@ -249,10 +274,13 @@ def update_user(user_uuid: str, updates: UserUpdate):
         "id": user["id"],
         "name": user["name"],
         "field_of_work": user.get("field_of_work"),
+        "training_type": user.get("training_type") or "siwes",
+        "log_length_lines": user.get("log_length_lines") or "2-3",
         "custom_prompt": user.get("custom_prompt"),
         "has_own_key": bool(user.get("api_key_encrypted")),
         "created_at": user.get("created_at"),
     }
+
 
 
 # ============================================================
@@ -293,6 +321,8 @@ def auth_upsert_user(request_data: dict):
                     "id": uid,
                     "name": u["name"],
                     "field_of_work": u.get("field_of_work"),
+                    "training_type": u.get("training_type") or "siwes",
+                    "log_length_lines": u.get("log_length_lines") or "2-3",
                     "custom_prompt": u.get("custom_prompt"),
                     "has_own_key": bool(u.get("api_key_encrypted")),
                     "created_at": u.get("created_at"),
@@ -310,6 +340,8 @@ def auth_upsert_user(request_data: dict):
                 "id": guest_uuid,
                 "name": u["name"],
                 "field_of_work": u.get("field_of_work"),
+                "training_type": u.get("training_type") or "siwes",
+                "log_length_lines": u.get("log_length_lines") or "2-3",
                 "custom_prompt": u.get("custom_prompt"),
                 "has_own_key": bool(u.get("api_key_encrypted")),
                 "created_at": u.get("created_at"),
@@ -322,12 +354,16 @@ def auth_upsert_user(request_data: dict):
             "email": email,
             "name": name,
             "avatar_url": avatar_url,
+            "training_type": "siwes",
+            "log_length_lines": "2-3",
             "created_at": None,
         }
         return {
             "id": new_id,
             "name": name,
             "field_of_work": None,
+            "training_type": "siwes",
+            "log_length_lines": "2-3",
             "custom_prompt": None,
             "has_own_key": False,
             "created_at": None,
@@ -348,6 +384,8 @@ def auth_upsert_user(request_data: dict):
                 "id": user_id,
                 "name": user["name"],
                 "field_of_work": user.get("field_of_work"),
+                "training_type": user.get("training_type") or "siwes",
+                "log_length_lines": user.get("log_length_lines") or "2-3",
                 "custom_prompt": user.get("custom_prompt"),
                 "has_own_key": bool(user.get("api_key_encrypted")),
                 "created_at": user.get("created_at"),
@@ -370,6 +408,8 @@ def auth_upsert_user(request_data: dict):
                         "id": str(user["id"]),
                         "name": user["name"],
                         "field_of_work": user.get("field_of_work"),
+                        "training_type": user.get("training_type") or "siwes",
+                        "log_length_lines": user.get("log_length_lines") or "2-3",
                         "custom_prompt": user.get("custom_prompt"),
                         "has_own_key": bool(user.get("api_key_encrypted")),
                         "created_at": user.get("created_at"),
@@ -381,6 +421,8 @@ def auth_upsert_user(request_data: dict):
             "email": email,
             "name": name,
             "avatar_url": avatar_url,
+            "training_type": "siwes",
+            "log_length_lines": "2-3",
         }).execute()
 
         user = new_user.data[0]
@@ -388,6 +430,8 @@ def auth_upsert_user(request_data: dict):
             "id": str(user["id"]),
             "name": user["name"],
             "field_of_work": user.get("field_of_work"),
+            "training_type": user.get("training_type") or "siwes",
+            "log_length_lines": user.get("log_length_lines") or "2-3",
             "custom_prompt": user.get("custom_prompt"),
             "has_own_key": False,
             "created_at": user.get("created_at"),
@@ -416,6 +460,8 @@ def get_user_by_auth_id(auth_user_id: str):
             "id": str(user["id"]),
             "name": user["name"],
             "field_of_work": user.get("field_of_work"),
+            "training_type": user.get("training_type") or "siwes",
+            "log_length_lines": user.get("log_length_lines") or "2-3",
             "custom_prompt": user.get("custom_prompt"),
             "has_own_key": bool(user.get("api_key_encrypted")),
             "created_at": user.get("created_at"),
@@ -448,6 +494,8 @@ def create_log(log: LogCreate):
                 raw_transcript=log.raw_transcript,
                 is_confidential=log.is_confidential,
                 audio_file_url=None,  # Not retained in storage
+                training_type=log.training_type,
+                log_length_lines=log.log_length_lines,
             )
             lid = str(created["id"])
             fake_logs_db[lid] = created
@@ -457,6 +505,8 @@ def create_log(log: LogCreate):
                 "date": str(created["date"]),
                 "raw_transcript": created.get("raw_transcript"),
                 "processed_output": created["processed_output"],
+                "training_type": created.get("training_type"),
+                "log_length_lines": created.get("log_length_lines"),
                 "is_confidential": created.get("is_confidential", False),
                 "audio_file_url": None,
                 "deleted_at": created.get("deleted_at"),
@@ -473,6 +523,8 @@ def create_log(log: LogCreate):
         "date": log.date,
         "raw_transcript": None if log.is_confidential else log.raw_transcript,
         "processed_output": log.processed_output,
+        "training_type": log.training_type,
+        "log_length_lines": log.log_length_lines,
         "is_confidential": log.is_confidential,
         "audio_file_url": None,
         "deleted_at": None,
@@ -508,6 +560,8 @@ def get_user_logs(
                     "date": str(l["date"]),
                     "raw_transcript": l.get("raw_transcript"),
                     "processed_output": l["processed_output"],
+                    "training_type": l.get("training_type"),
+                    "log_length_lines": l.get("log_length_lines"),
                     "is_confidential": l.get("is_confidential", False),
                     "audio_file_url": l.get("audio_file_url"),
                     "deleted_at": l.get("deleted_at"),
@@ -560,6 +614,8 @@ def get_single_log(log_id: str, include_deleted: bool = False):
                     "date": str(log["date"]),
                     "raw_transcript": log.get("raw_transcript"),
                     "processed_output": log["processed_output"],
+                    "training_type": log.get("training_type"),
+                    "log_length_lines": log.get("log_length_lines"),
                     "is_confidential": log.get("is_confidential", False),
                     "audio_file_url": log.get("audio_file_url"),
                     "deleted_at": log.get("deleted_at"),
@@ -576,6 +632,7 @@ def get_single_log(log_id: str, include_deleted: bool = False):
     if not include_deleted and log.get("deleted_at"):
         raise HTTPException(status_code=404, detail="Log not found (in trash)")
     return log
+
 
 
 @app.delete("/api/logs/{log_id}")
@@ -724,11 +781,15 @@ async def process_voice(request: Request):
     user_uuid = None
     raw_transcript = None
     use_own_key = False
+    req_training_type = None
+    req_log_length_lines = None
 
     if "multipart/form-data" in content_type:
         form = await request.form()
         user_uuid = form.get("user_uuid")
         use_own_key = str(form.get("use_own_key", "false")).lower() in ("true", "1")
+        req_training_type = form.get("training_type")
+        req_log_length_lines = form.get("log_length_lines")
         audio_file = form.get("audio_file")
         if audio_file and hasattr(audio_file, "read"):
             file_bytes = await audio_file.read()
@@ -744,6 +805,8 @@ async def process_voice(request: Request):
         user_uuid = body.get("user_uuid")
         raw_transcript = body.get("transcript")
         use_own_key = bool(body.get("use_own_key", False))
+        req_training_type = body.get("training_type")
+        req_log_length_lines = body.get("log_length_lines")
 
     if not user_uuid:
         raise HTTPException(status_code=400, detail="Missing user_uuid")
@@ -751,7 +814,7 @@ async def process_voice(request: Request):
     if not raw_transcript or not str(raw_transcript).strip():
         raise HTTPException(status_code=400, detail="No transcript provided or could not transcribe audio")
 
-    # Step 1: Get the student's profile (custom prompt, field, vocab)
+    # Step 1: Get the student's profile (custom prompt, field, vocab, training program)
     def fetch_user_data(uid: str):
         u = None
         c = get_supabase_client()
@@ -781,13 +844,17 @@ async def process_voice(request: Request):
 
     custom_prompt = user.get("custom_prompt") if user else None
     field_of_work = user.get("field_of_work") if user else None
+    training_type = req_training_type or (user.get("training_type") if user else "siwes") or "siwes"
+    log_length_lines = req_log_length_lines or (user.get("log_length_lines") if user else None)
 
-    # Step 2: Build the full prompt
+    # Step 2: Build the full prompt with student program profile and line limit
     full_prompt = build_prompt(
         raw_transcript=str(raw_transcript),
         custom_prompt=custom_prompt,
         vocabulary_terms=user_vocab if user_vocab else None,
         field_of_work=field_of_work,
+        training_type=training_type,
+        log_length_lines=log_length_lines,
     )
 
     # Step 3: Resolve which API key to use (BYOK support)

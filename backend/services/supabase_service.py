@@ -54,7 +54,12 @@ def get_supabase_client() -> Optional[Client]:
 #  USER DATA ACCESS
 # ============================================================
 
-def db_create_user(name: str, field_of_work: Optional[str] = None) -> Dict[str, Any]:
+def db_create_user(
+    name: str,
+    field_of_work: Optional[str] = None,
+    training_type: Optional[str] = "siwes",
+    log_length_lines: Optional[str] = "2-3",
+) -> Dict[str, Any]:
     """Insert a new user into Supabase."""
     client = get_supabase_client()
     if not client:
@@ -63,11 +68,16 @@ def db_create_user(name: str, field_of_work: Optional[str] = None) -> Dict[str, 
     payload: Dict[str, Any] = {"name": name}
     if field_of_work is not None:
         payload["field_of_work"] = field_of_work
+    if training_type is not None:
+        payload["training_type"] = training_type
+    if log_length_lines is not None:
+        payload["log_length_lines"] = log_length_lines
 
     res = client.table("users").insert(payload).execute()
     if res.data and len(res.data) > 0:
         return res.data[0]
     raise RuntimeError("Failed to create user in Supabase")
+
 
 
 def db_get_user(user_id: str) -> Optional[Dict[str, Any]]:
@@ -119,6 +129,8 @@ def db_create_log(
     raw_transcript: Optional[str] = None,
     is_confidential: bool = False,
     audio_file_url: Optional[str] = None,
+    training_type: Optional[str] = None,
+    log_length_lines: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Insert a new daily log entry into Supabase."""
     if not is_valid_uuid(user_id):
@@ -139,6 +151,10 @@ def db_create_log(
         "is_confidential": is_confidential,
         "audio_file_url": audio_file_url,
     }
+    if training_type is not None:
+        payload["training_type"] = training_type
+    if log_length_lines is not None:
+        payload["log_length_lines"] = log_length_lines
 
     res = client.table("logs").insert(payload).execute()
     if res.data and len(res.data) > 0:

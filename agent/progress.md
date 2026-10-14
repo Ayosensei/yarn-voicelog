@@ -11,10 +11,9 @@
 - Resolved Vercel 500 MIDDLEWARE_INVOCATION_FAILED error: added environment variable guards and try/catch block to `frontend/src/middleware.js`.
 
 ### Current
-- Pushing middleware hardening fix to GitHub to trigger Vercel redeployment
+- Slice 1: Database schema, backend Pydantic models, and AI prompt engine for SWEP/SIWES/IT and custom line length
 
 ### Next
-- Verify deployed endpoints and test on mobile / web
+- Slice 2: Frontend Settings and New Log UI with program selector & line length controls
+- Verify and commit/push after each step to GitHub
 
-### Open questions
-- None

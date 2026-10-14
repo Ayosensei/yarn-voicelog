@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url TEXT,                 -- Google profile picture
     name TEXT NOT NULL,
     field_of_work TEXT,              -- e.g. "Civil Engineering - Highway Construction"
+    training_type TEXT DEFAULT 'siwes', -- 'swep' (Part 2), 'siwes' (Part 3), 'it' (Part 4)
+    log_length_lines TEXT DEFAULT '2-3', -- e.g. '2-3', '2-4', '5-6', or custom
     custom_prompt TEXT,              -- User custom instructions for Gemini
     api_key_encrypted TEXT,          -- Encrypted BYOK Gemini/OpenAI key
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -23,7 +25,9 @@ CREATE TABLE IF NOT EXISTS logs (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     date DATE NOT NULL,
     raw_transcript TEXT,             -- Nullified if marked confidential
-    processed_output TEXT NOT NULL,  -- Structured SIWES logbook entry
+    processed_output TEXT NOT NULL,  -- Structured logbook entry
+    training_type TEXT,              -- Historical program snapshot
+    log_length_lines TEXT,           -- Historical line length snapshot
     is_confidential BOOLEAN DEFAULT FALSE,
     audio_file_url TEXT,             -- Supabase Storage link (if uploaded)
     deleted_at TIMESTAMPTZ,          -- Soft-delete timestamp (purged after 7 days)

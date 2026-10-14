@@ -39,3 +39,8 @@ Reversible? Medium (system prompt tuning + export layout design).
 Decision: Vercel for Next.js frontend, Render for FastAPI backend, and Supabase for database & auth.
 Why (user's words): "Frontend - Vercel, Backend - Render"
 Reversible? Hard (hosting provider + deployment configuration + environment secrets).
+
+### 2026-10-14 — Student training program tiers & customizable line length
+Decision: Differentiate logbook output by training program (SWEP Part 2: 5-6 lines foundational workshop focus; SIWES Part 3: 2-3 lines compact industry summary; IT Part 4: 2-4 lines professional engineering focus), with user ability to tweak line length.
+Why (user's words): "The IT logbook has space for about 2-4 lines for each weekday. The SWEP one has about 5-6 lines. The IT logbook has about 2-4 lines also. There should be an option for each user to tweak the length of the output based on their own program"
+Reversible? Medium (data model columns + prompt builder rules + UI controls).
